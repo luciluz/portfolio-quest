@@ -8,9 +8,18 @@ const mouse = { x: 450, y: 250, onCanvas: false };
 
 // ============ NEON SIGN CONFIG ============
 const NEON_SIGN = {
-    x: 180, y: 100,  // Moved higher
+    x: 180, y: 100,
     baseColor: '#00d9ff',
     hoverColor: '#ff00ff',
+    isHovered: false
+};
+
+const CONTACT_SIGN = {
+    // x will be calculated dynamically (780)
+    // y will be calculated dynamically (NEON_SIGN.y + 40)
+    width: 250, height: 60,
+    baseColor: '#00d9ff', // Match Projects Cyan
+    hoverColor: '#ff00ff', // Match Projects Magenta
     isHovered: false
 };
 
@@ -57,6 +66,12 @@ function setLanguage(lang) {
     currentLang = lang;
     updateLanguageButtons();
     updateAllText();
+
+    // Refresh modal if open
+    const modal = document.getElementById('modal-overlay');
+    if (modal && !modal.classList.contains('hidden')) {
+        refreshModalContent();
+    }
 }
 
 function updateLanguageButtons() {
@@ -168,32 +183,44 @@ const CONFIG = {
 const PROJECTS = [
     {
         id: 1,
-        title: "E-Commerce Platform",
-        description: "A full-stack e-commerce solution with real-time inventory management, secure payment processing, and an intuitive admin dashboard.",
+        title: { en: "E-Commerce Platform", es: "Plataforma E-Commerce" },
+        description: {
+            en: "A full-stack e-commerce solution with real-time inventory management, secure payment processing, and an intuitive admin dashboard.",
+            es: "Solución completa de comercio electrónico con gestión de inventario en tiempo real, pagos seguros y panel de administración intuitivo."
+        },
         techStack: ["React", "Node.js", "MongoDB", "Stripe API", "Redux"],
         liveUrl: "#",
         sourceUrl: "#"
     },
     {
         id: 2,
-        title: "Weather Dashboard",
-        description: "An interactive weather application that provides real-time forecasts, animated weather visualizations, and location-based services.",
+        title: { en: "Weather Dashboard", es: "Panel Meteorológico" },
+        description: {
+            en: "An interactive weather application that provides real-time forecasts, animated weather visualizations, and location-based services.",
+            es: "Aplicación meteorológica interactiva con pronósticos en tiempo real, visualizaciones animadas y servicios basados en ubicación."
+        },
         techStack: ["Vue.js", "OpenWeather API", "Chart.js", "Geolocation API"],
         liveUrl: "#",
         sourceUrl: "#"
     },
     {
         id: 3,
-        title: "Task Management App",
-        description: "A Kanban-style productivity tool with drag-and-drop functionality, real-time collaboration features, and customizable workflows.",
+        title: { en: "Task Management App", es: "Gestor de Tareas" },
+        description: {
+            en: "A Kanban-style productivity tool with drag-and-drop functionality, real-time collaboration features, and customizable workflows.",
+            es: "Herramienta de productividad estilo Kanban con funcionalidad drag-and-drop, colaboración en tiempo real y flujos de trabajo personalizables."
+        },
         techStack: ["TypeScript", "Next.js", "PostgreSQL", "Socket.io"],
         liveUrl: "#",
         sourceUrl: "#"
     },
     {
         id: 4,
-        title: "AI Image Generator",
-        description: "A creative tool powered by machine learning that generates unique artwork from text prompts. Features style transfer and image upscaling.",
+        title: { en: "AI Image Generator", es: "Generador de Imágenes IA" },
+        description: {
+            en: "A creative tool powered by machine learning that generates unique artwork from text prompts. Features style transfer and image upscaling.",
+            es: "Herramienta creativa impulsada por ML que genera arte único a partir de texto. Incluye transferencia de estilo y escalado de imágenes."
+        },
         techStack: ["Python", "TensorFlow", "FastAPI", "React"],
         liveUrl: "#",
         sourceUrl: "#"
@@ -202,10 +229,15 @@ const PROJECTS = [
 
 // ============ CONTACT DATA ============
 const CONTACT_INFO = {
+    title: { en: "Let's Connect!", es: "¡Conectemos!" },
+    description: {
+        en: "Feel free to reach out! I'm always open to new opportunities and collaborations.",
+        es: "¡No dudes en contactarme! Siempre estoy abierto a nuevas oportunidades y colaboraciones."
+    },
     links: [
         { type: 'github', label: 'GitHub', url: 'https://github.com/luciluz', icon: '🐙' },
         { type: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/in/luciruzveloso/', icon: '💼' },
-        { type: 'email', label: 'Email', url: '#', icon: '✉️', email: 'luciruzvelos@gmail.com' }
+        { type: 'email', label: 'Email', url: '#', icon: '✉️', email: 'luciruzveloso@gmail.com' }
     ]
 };
 
@@ -937,11 +969,40 @@ canvas.addEventListener('mousemove', (e) => {
     const signWidth = 280, signHeight = 50;
     NEON_SIGN.isHovered = mouse.x >= NEON_SIGN.x - 20 && mouse.x <= NEON_SIGN.x + signWidth &&
         mouse.y >= NEON_SIGN.y - signHeight && mouse.y <= NEON_SIGN.y + 20;
+
+    // Check contact sign hover
+    // Position aligned with drawContactLabel (X=780, Y=NEON_SIGN.y)
+    // Check contact sign hover
+    // Position aligned with drawContactLabel (X=780, Y=NEON_SIGN.y + 40)
+    const contactX = 780;
+    const contactWidth = 250; // Increased width for larger font
+    const contactHeight = 50; // Match signHeight
+
+    // Use same offsets as NEON_SIGN (-20, +20 etc)
+    // NEON_SIGN: y - 50 to y + 20. 
+    // Contact Y base is NEON_SIGN.y + 40
+    const contactYBase = NEON_SIGN.y + 40;
+
+    CONTACT_SIGN.isHovered = mouse.x >= contactX - (contactWidth / 2) - 20 && mouse.x <= contactX + (contactWidth / 2) + 20 &&
+        mouse.y >= contactYBase - contactHeight && mouse.y <= contactYBase + 20;
+
+    // Note: collision logic above assumes 780 is Center X, because drawContactLabel uses textAlign='center'
+    // drawContactLabel uses targetX = block.center. Block center is approx 770 (740 + 30).
+    // Let's assume 780 is roughly the center we want to check around.
+    // If text is centered at 780, range is 780 - width/2 to 780 + width/2.
+
+    // Cursor pointer
+    if (NEON_SIGN.isHovered || CONTACT_SIGN.isHovered) {
+        canvas.style.cursor = 'pointer';
+    } else {
+        canvas.style.cursor = 'default';
+    }
 });
 
 canvas.addEventListener('mouseleave', () => {
     mouse.onCanvas = false;
     NEON_SIGN.isHovered = false;
+    CONTACT_SIGN.isHovered = false;
 });
 
 // Initialize audio on first interaction
@@ -1329,10 +1390,11 @@ class ProjectBlock extends Block {
         }
 
         ctx.shadowBlur = 0;
-        ctx.fillStyle = onCooldown ? '#888' : '#fff';
-        ctx.font = `${10 * scale}px 'Press Start 2P', cursive`;
-        ctx.textAlign = 'center';
-        ctx.fillText(`P${this.projectIndex + 1}`, x + w / 2, y - 8 * scale);
+        // Mini-label removed as per user request
+        // ctx.fillStyle = onCooldown ? '#888' : '#fff';
+        // ctx.font = `${10 * scale}px 'Press Start 2P', cursive`;
+        // ctx.textAlign = 'center';
+        // ctx.fillText(`P${this.projectIndex + 1}`, x + w / 2, y - 8 * scale);
     }
 }
 
@@ -1391,10 +1453,11 @@ class ContactBlock extends Block {
         }
 
         ctx.shadowBlur = 0;
-        ctx.fillStyle = onCooldown ? '#888' : '#fff';
-        ctx.font = `${8 * scale}px 'Press Start 2P', cursive`;
-        ctx.textAlign = 'center';
-        ctx.fillText('CONTACT', x + w / 2, y - 8 * scale);
+        // Mini-label removed as per user request
+        // ctx.fillStyle = onCooldown ? '#888' : '#fff';
+        // ctx.font = `${8 * scale}px 'Press Start 2P', cursive`;
+        // ctx.textAlign = 'center';
+        // ctx.fillText('CONTACT', x + w / 2, y - 8 * scale);
     }
 }
 
@@ -1456,8 +1519,17 @@ const modalContent = document.getElementById('modal-content');
 let hudOpen = false;
 
 function showProjectModal(project) {
-    projectTitle.textContent = project.title;
-    projectDescription.textContent = project.description;
+    currentProjectId = project.id;
+    // Localize content based on currentLang with fallback
+    const title = project.title[currentLang] || project.title['en'] || project.title;
+    const desc = project.description[currentLang] || project.description['en'] || project.description;
+
+    projectTitle.textContent = title;
+    projectDescription.textContent = desc;
+
+    // Ensure Tech Stack section is visible for projects
+    const techStackContainer = document.getElementById('tech-stack');
+    if (techStackContainer) techStackContainer.style.display = 'block';
 
     techTags.innerHTML = '';
     project.techStack.forEach(tech => {
@@ -1472,9 +1544,10 @@ function showProjectModal(project) {
         techTags.appendChild(tag);
     });
 
+
     projectLinks.innerHTML = `
-        <a href="${project.liveUrl}" class="btn btn-primary" target="_blank">View Live</a>
-        <a href="${project.sourceUrl}" class="btn btn-secondary" target="_blank">Source Code</a>
+        <a href="${project.liveUrl}" class="btn btn-primary" target="_blank">${t('viewLive')}</a>
+        <a href="${project.sourceUrl}" class="btn btn-secondary" target="_blank">${t('sourceCode')}</a>
     `;
 
     modalOverlay.classList.remove('hidden');
@@ -1482,30 +1555,113 @@ function showProjectModal(project) {
     hudOpen = true;
 }
 
+function refreshModalContent() {
+    if (currentProjectId) {
+        const project = PROJECTS.find(p => p.id === currentProjectId);
+        if (project) {
+            showProjectModal(project);
+        }
+    } else {
+        // Contact modal logic if needed, but currently simplified
+        showContactModal();
+    }
+}
+
 function showContactModal() {
-    projectTitle.textContent = CONTACT_INFO.title;
-    projectDescription.textContent = "Feel free to reach out! I'm always open to new opportunities and collaborations.";
+    currentProjectId = null; // Clear project ID so refresh logic knows it's contact modal
+
+    // Localize Title and Description
+    const title = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
+    const desc = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
+
+    projectTitle.textContent = title;
+    projectDescription.textContent = desc;
+
+    // Hide Tech Stack section for contact modal
+    const techStackContainer = document.getElementById('tech-stack');
+    if (techStackContainer) techStackContainer.style.display = 'none';
 
     techTags.innerHTML = '';
 
     // Create contact links
     projectLinks.innerHTML = '';
-    CONTACT_INFO.links.forEach(link => {
-        const a = document.createElement('a');
-        a.href = link.url;
-        a.className = 'contact-link';
-        a.target = link.type === 'email' ? '_self' : '_blank';
-        a.innerHTML = `<span class="contact-icon">${link.icon}</span><span class="contact-label">${link.label}</span>`;
 
-        // CODING state on hover
-        a.addEventListener('mouseenter', () => {
-            player.setForcedState(PlayerState.CODING);
-            soundManager.playCoding();
+    // Create container for grouped links
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '15px';
+    container.style.width = '100%';
+
+    // Group 1: Socials (GitHub, LinkedIn)
+    const socialGroup = document.createElement('div');
+    socialGroup.className = 'social-group';
+    socialGroup.style.display = 'flex';
+    socialGroup.style.gap = '10px';
+    socialGroup.style.justifyContent = 'center';
+
+    // GitHub
+    const githubLink = CONTACT_INFO.links.find(l => l.label === 'GitHub');
+    if (githubLink) {
+        const btn = document.createElement('a');
+        btn.href = githubLink.url;
+        btn.target = '_blank';
+        btn.className = 'btn btn-secondary'; // Secondary style for socials
+        btn.innerHTML = `<i class="fab fa-github"></i> GitHub`;
+        socialGroup.appendChild(btn);
+    }
+
+    // LinkedIn
+    const linkedinLink = CONTACT_INFO.links.find(l => l.label === 'LinkedIn');
+    if (linkedinLink) {
+        const btn = document.createElement('a');
+        btn.href = linkedinLink.url;
+        btn.target = '_blank';
+        btn.className = 'btn btn-secondary';
+        btn.innerHTML = `<i class="fab fa-linkedin"></i> LinkedIn`;
+        socialGroup.appendChild(btn);
+    }
+
+    container.appendChild(socialGroup);
+
+    // Group 2: Email
+    const emailLink = CONTACT_INFO.links.find(l => l.label === 'Email');
+    if (emailLink) {
+        const emailGroup = document.createElement('div');
+        emailGroup.className = 'email-group';
+        emailGroup.style.textAlign = 'center';
+
+        const btn = document.createElement('a');
+        btn.href = '#'; // Prevent default navigation
+        btn.className = 'btn btn-primary'; // Primary style for direct contact
+        btn.style.cursor = 'pointer'; // Ensure pointer cursor
+        // Show full email address
+        const originalText = `<i class="fas fa-envelope"></i> ${emailLink.email}`;
+        btn.innerHTML = originalText;
+
+        // Clipboard Feature
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = emailLink.email;
+            navigator.clipboard.writeText(email).then(() => {
+                // Visual feedback
+                const copiedText = currentLang === 'en' ? "✔ Copied!" : "✔ ¡Copiado!";
+                btn.innerHTML = copiedText;
+
+                // Revert after 2 seconds
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
         });
-        a.addEventListener('mouseleave', () => player.clearForcedState());
 
-        projectLinks.appendChild(a);
-    });
+        emailGroup.appendChild(btn);
+        container.appendChild(emailGroup);
+    }
+
+    projectLinks.appendChild(container);
 
     modalOverlay.classList.remove('hidden');
     projectModal.classList.add('active');
@@ -1599,29 +1755,49 @@ function drawNeonSign() {
 // Draw contact neon label (same style as projects)
 function drawContactLabel() {
     const scale = getScale();
-    const color = '#ff6b6b';  // Pink/red for contact
-    const glowIntensity = 15 + Math.sin(neonPulse * 0.8) * 5;
-
     ctx.save();
-    ctx.font = `bold ${20 * scale}px 'Press Start 2P', cursive`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
 
-    // Position below PROJECTS sign - moved down 60px from neon sign
-    const contactX = 780 * scale;
-    const contactY = (NEON_SIGN.y + 60) * scale;
+    // Find contact block to align text
+    let targetX = 780 * scale;
+    let targetY = NEON_SIGN.y * scale;
 
-    // Glow layers
+    // Attempt to find the ContactBlock to align perfectly if blocks exist
+    if (typeof blocks !== 'undefined') {
+        const contactBlock = blocks.find(b => b instanceof ContactBlock);
+        if (contactBlock) {
+            // Align horizontally to center of block
+            targetX = (contactBlock.x + contactBlock.width / 2) * scale;
+            // targetY = NEON_SIGN.y * scale; 
+            // Move down 40px as requested
+            targetY = (NEON_SIGN.y + 40) * scale;
+        }
+    }
+
+    // Use CONTACT_SIGN config for colors
+    const color = CONTACT_SIGN.isHovered ? CONTACT_SIGN.hoverColor : CONTACT_SIGN.baseColor;
+    const glowIntensity = CONTACT_SIGN.isHovered ?
+        25 + Math.sin(neonPulse * 3) * 10 :
+        15 + Math.sin(neonPulse) * 5;
+
+    ctx.shadowBlur = glowIntensity * scale; // Ensure * scale matches drawNeonSign
     ctx.shadowColor = color;
-    ctx.shadowBlur = glowIntensity * scale;
-    const labelText = t('contactLabel');
     ctx.fillStyle = color;
-    ctx.fillText(labelText, contactX, contactY);
 
-    // Bright center
-    ctx.shadowBlur = 5 * scale;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(labelText, contactX, contactY);
+    // Strict Consistency: Match drawNeonSign exactly
+    ctx.font = `bold ${28 * scale}px 'Press Start 2P', cursive`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = 'middle'; // Match drawNeonSign
+
+    // Label
+    const labelText = t('contactLabel') || (currentLang === 'en' ? "CONTACT" : "CONTACTO");
+    ctx.fillText(labelText, targetX, targetY);
+
+    // Bright center pass
+    if (CONTACT_SIGN.isHovered) {
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 5;
+        ctx.fillText(labelText, targetX, targetY);
+    }
 
     ctx.restore();
 }
