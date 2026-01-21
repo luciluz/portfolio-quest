@@ -8,7 +8,7 @@ const mouse = { x: 450, y: 250, onCanvas: false };
 
 // ============ NEON SIGN CONFIG ============
 const NEON_SIGN = {
-    x: 180, y: 100,
+    x: 140, y: 100, // Shifted left by 40px
     baseColor: '#00d9ff',
     hoverColor: '#ff00ff',
     isHovered: false
@@ -331,6 +331,9 @@ class SoundManager {
     }
 
     playBGM() {
+        // Disabled by user request
+        return;
+
         if (!this.audioContext) this.init();
         if (!this.enabled || this.bgmPlaying) return;
         this.bgmPlaying = true;
@@ -1249,11 +1252,14 @@ class Player {
 
 // ============ PLATFORM CLASS ============
 class Platform {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, invisible = false) {
         this.x = x; this.y = y; this.width = width; this.height = height;
+        this.invisible = invisible;
     }
 
     draw() {
+        if (this.invisible) return; // Skip if invisible
+
         const scale = getScale();
         const x = this.x * scale, y = this.y * scale;
         const w = this.width * scale, h = this.height * scale;
@@ -1635,8 +1641,8 @@ function showContactModal() {
         btn.href = '#'; // Prevent default navigation
         btn.className = 'btn btn-primary'; // Primary style for direct contact
         btn.style.cursor = 'pointer'; // Ensure pointer cursor
-        // Show full email address
-        const originalText = `<i class="fas fa-envelope"></i> ${emailLink.email}`;
+        // Show full email address with copy icon
+        const originalText = `<i class="fas fa-envelope"></i> ${emailLink.email} <i class="fas fa-copy" style="margin-left: 10px; opacity: 0.7;"></i>`;
         btn.innerHTML = originalText;
 
         // Clipboard Feature
@@ -1687,19 +1693,34 @@ document.addEventListener('keydown', (e) => {
 function updateMuteButton() {
     const btn = document.getElementById('mute-btn');
     if (btn) {
-        btn.innerHTML = soundManager.muted ? '🔇' : '🔊';
+        btn.innerHTML = soundManager.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
         btn.title = soundManager.muted ? 'Unmute' : 'Mute';
     }
 }
 
 // Setup mute button
+// Setup mute button & Respawn
 document.addEventListener('DOMContentLoaded', () => {
     const muteBtn = document.getElementById('mute-btn');
     if (muteBtn) {
         muteBtn.addEventListener('click', () => {
             soundManager.toggleMute();
+            updateMuteButton();
         });
         updateMuteButton();
+    }
+
+    // Respawn Button Listener
+    const respawnBtn = document.getElementById('respawn-btn');
+    if (respawnBtn) {
+        respawnBtn.addEventListener('click', () => {
+            player.x = 430;
+            player.y = 400;
+            player.vx = 0;
+            player.vy = 0;
+            player.width = 40;
+            player.forcedState = null; // Clear states
+        });
     }
 });
 
@@ -1793,11 +1814,11 @@ function drawContactLabel() {
     ctx.fillText(labelText, targetX, targetY);
 
     // Bright center pass
-    if (CONTACT_SIGN.isHovered) {
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowBlur = 5;
-        ctx.fillText(labelText, targetX, targetY);
-    }
+    // if (CONTACT_SIGN.isHovered) {  <-- Removed logic to match drawNeonSign
+    ctx.shadowBlur = 5 * scale;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(labelText, targetX, targetY);
+    // }
 
     ctx.restore();
 }
@@ -1869,6 +1890,9 @@ const platforms = [
     new Platform(0, 460, 900, 50),           // Main floor
     new Platform(80, 360, 400, 20),          // Project platform (moved down 60px)
     new Platform(680, 380, 180, 18),         // Contact platform
+    // Invisible Title Platforms (Moved up to stand ON TOP of text)
+    new Platform(140, 83, 280, 10, true),    // Projects (Text Y=100)
+    new Platform(655, 123, 250, 10, true)    // Contact (Text Y=140)
 ];
 
 // Blocks with more room

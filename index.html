@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
 </head>
 
 <body>
@@ -31,7 +33,9 @@
                             <span class="theme-icon sun">☀️</span>
                         </span>
                     </label>
-                    <button id="mute-btn" class="control-btn" title="Mute/Unmute">🔊</button>
+                    <button id="respawn-btn" class="control-btn" title="Respawn"><i class="fas fa-redo"></i></button>
+                    <button id="mute-btn" class="control-btn" title="Mute/Unmute"><i
+                            class="fas fa-volume-up"></i></button>
                 </div>
                 <div class="toolbar-right">
                     <button class="lang-btn active" data-lang="en" onclick="setLanguage('en')"
@@ -64,23 +68,34 @@
 
             <!-- Tech Strip Footer (Bottom) -->
             <div id="tech-strip">
-                <div class="tech-item" title="HTML5">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M12 2L1.5 5L3 20L12 23L21 20L22.5 5L12 2ZM18.5 18L12 20L5.5 18L4.5 7H19.5L18.5 18Z" />
-                    </svg>
-                    <span>HTML5</span>
-                </div>
-                <div class="tech-item" title="CSS3">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M12 2L1.5 5L3 20L12 23L21 20L22.5 5L12 2ZM18.5 18L12 20L5.5 18L4.5 7H19.5L18.5 18Z" />
-                    </svg>
-                    <span>CSS3</span>
-                </div>
-                <div class="tech-item" title="JavaScript">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M3 3H21V21H3V3ZM12 18V13H10V18H12ZM16.5 18V13C16.5 13 14 13 14 15V18H16.5Z" />
-                    </svg>
-                    <span>JS</span>
+                <div class="tech-carousel">
+                    <div class="tech-track">
+                        <!-- Set 1 -->
+                        <i class="devicon-python-plain" title="Python"></i>
+                        <i class="devicon-django-plain" title="Django"></i>
+                        <i class="devicon-cplusplus-plain" title="C++"></i>
+                        <i class="devicon-go-original-wordmark" title="Go / Golang"></i>
+                        <i class="devicon-postgresql-plain" title="SQL (PostgreSQL)"></i>
+                        <i class="devicon-javascript-plain" title="JavaScript"></i>
+                        <i class="devicon-html5-plain" title="HTML5"></i>
+                        <i class="devicon-css3-plain" title="CSS3"></i>
+                        <i class="devicon-pytorch-original" title="PyTorch (Deep Learning)"></i>
+                        <i class="devicon-matplotlib-plain" title="Matplotlib (Data Viz)"></i>
+                        <i class="fas fa-code" title="Smalltalk / Design Patterns"></i>
+
+                        <!-- Set 2 (Duplicate for Infinite Scroll) -->
+                        <i class="devicon-python-plain" title="Python"></i>
+                        <i class="devicon-django-plain" title="Django"></i>
+                        <i class="devicon-cplusplus-plain" title="C++"></i>
+                        <i class="devicon-go-original-wordmark" title="Go / Golang"></i>
+                        <i class="devicon-postgresql-plain" title="SQL (PostgreSQL)"></i>
+                        <i class="devicon-javascript-plain" title="JavaScript"></i>
+                        <i class="devicon-html5-plain" title="HTML5"></i>
+                        <i class="devicon-css3-plain" title="CSS3"></i>
+                        <i class="devicon-pytorch-original" title="PyTorch (Deep Learning)"></i>
+                        <i class="devicon-matplotlib-plain" title="Matplotlib (Data Viz)"></i>
+                        <i class="fas fa-code" title="Smalltalk / Design Patterns"></i>
+                    </div>
                 </div>
             </div>
         </div>

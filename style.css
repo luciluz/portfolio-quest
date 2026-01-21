@@ -96,29 +96,61 @@ body {
 #tech-strip {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    padding: 10px 0 5px 0;
+    padding: 10px 0;
     background: var(--bg-dark);
+    /* Fallback */
     border-radius: 0 0 15px 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    /* Ensure content doesn't spill */
 }
 
-.tech-item {
+/* Infinite Scrolling Carousel */
+.tech-carousel {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 900px;
+    /* Constrain to game width */
+    max-width: 100%;
+    margin: 0 auto;
+    /* Center alignment */
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 15px 15px;
+    /* Match bottom corners */
+}
+
+.tech-track {
     display: flex;
+    gap: 40px;
+    width: max-content;
+    animation: scroll 25s linear infinite;
+    padding: 0 20px;
+    /* Slight buffer */
     align-items: center;
-    gap: 6px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 4px;
-    transition: var(--transition-smooth);
+    /* Vertically center icons */
 }
 
-.tech-item:hover {
-    color: var(--accent-secondary);
-    background: rgba(0, 217, 255, 0.1);
-    transform: translateY(-2px);
+.tech-track i {
+    font-size: 30px;
+    color: #888;
+    transition: color 0.3s ease;
+    cursor: default;
+}
+
+.tech-track i:hover {
+    color: #ffffff;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
 }
 
 /* Control Buttons (Redefined for toolbar) */
@@ -140,6 +172,43 @@ body {
     background: rgba(0, 217, 255, 0.2);
     transform: scale(1.05);
     box-shadow: 0 0 10px var(--hud-glow);
+}
+
+/* Specific visibility improvements for Utility Buttons */
+/* Utility Buttons Container */
+#respawn-btn,
+#mute-btn {
+    background: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent dark bg */
+    border: 1px solid #555;
+    opacity: 1;
+    cursor: pointer;
+    /* Flex center to align icon perfectly */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Force Icon Color */
+#respawn-btn i,
+#mute-btn i {
+    color: #ffffff !important;
+    font-size: 1.2rem;
+    /* Make them slightly bigger */
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Hover Effects */
+#respawn-btn:hover,
+#mute-btn:hover {
+    border-color: #00f3ff;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+}
+
+#respawn-btn:hover i,
+#mute-btn:hover i {
+    color: #00f3ff !important;
+    text-shadow: 0 0 8px #00f3ff;
 }
 
 .lang-btn {
