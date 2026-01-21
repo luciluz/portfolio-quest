@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive 2D Platformer Portfolio - Explore my projects through gameplay!">
+    <title>2D Portfolio | Platformer Experience</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="game-container">
+        <header id="game-header">
+            <h1 id="game-title">🎮 PORTFOLIO QUEST</h1>
+            <p class="instructions" id="instructions-text">Use ← → or A D to move | ↑ W SPACE to jump</p>
+            <p class="hint" id="hint-text">💡 Head-butt the blocks from below! Walk off edges to wrap!</p>
+        </header>
+
+        <!-- Arcade Console Chassis -->
+        <div id="game-chassis">
+            <!-- Game Toolbar (Top) -->
+            <div id="game-toolbar">
+                <div class="toolbar-left">
+                    <label class="theme-switch" title="Toggle Day/Night">
+                        <input type="checkbox" id="theme-checkbox" checked onchange="toggleTheme()">
+                        <span class="theme-slider">
+                            <span class="theme-icon moon">🌙</span>
+                            <span class="theme-icon sun">☀️</span>
+                        </span>
+                    </label>
+                    <button id="mute-btn" class="control-btn" title="Mute/Unmute">🔊</button>
+                </div>
+                <div class="toolbar-right">
+                    <button class="lang-btn active" data-lang="en" onclick="setLanguage('en')"
+                        title="English">🇬🇧</button>
+                    <button class="lang-btn" data-lang="es" onclick="setLanguage('es')" title="Español">🇦🇷</button>
+                </div>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div id="canvas-wrapper">
+                <canvas id="gameCanvas"></canvas>
+
+                <!-- HUD Panel -->
+                <div id="modal-overlay" class="hidden">
+                    <div id="project-modal">
+                        <span class="hud-label">Project Info</span>
+                        <button id="modal-close" aria-label="Close panel">&times;</button>
+                        <div id="modal-content">
+                            <h2 id="project-title">Project Title</h2>
+                            <p id="project-description">Project description goes here...</p>
+                            <div id="tech-stack">
+                                <h3>Tech Stack</h3>
+                                <div id="tech-tags"></div>
+                            </div>
+                            <div id="project-links"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tech Strip Footer (Bottom) -->
+            <div id="tech-strip">
+                <div class="tech-item" title="HTML5">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M12 2L1.5 5L3 20L12 23L21 20L22.5 5L12 2ZM18.5 18L12 20L5.5 18L4.5 7H19.5L18.5 18Z" />
+                    </svg>
+                    <span>HTML5</span>
+                </div>
+                <div class="tech-item" title="CSS3">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M12 2L1.5 5L3 20L12 23L21 20L22.5 5L12 2ZM18.5 18L12 20L5.5 18L4.5 7H19.5L18.5 18Z" />
+                    </svg>
+                    <span>CSS3</span>
+                </div>
+                <div class="tech-item" title="JavaScript">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M3 3H21V21H3V3ZM12 18V13H10V18H12ZM16.5 18V13C16.5 13 14 13 14 15V18H16.5Z" />
+                    </svg>
+                    <span>JS</span>
+                </div>
+            </div>
+        </div>
+
+        <footer id="game-footer">
+            <p id="footer-text">© 2026 Portfolio Quest | M Toggle Music | HTML5 Canvas &amp; Vanilla JS</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize language on load
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage('en');
+        });
+    </script>
+</body>
+
+</html>
