@@ -185,8 +185,14 @@ const PROJECTS = [
         id: 1,
         title: { en: "TerraStudio", es: "TerraStudio" },
         description: {
-            en: "A real estate web platform with data analytics applied to marketing. Features a custom SQLite database and full-stack architecture.",
-            es: "Plataforma web inmobiliaria con analítica de datos aplicada al marketing. Gestión de base de datos y arquitectura full-stack."
+            en: [
+                "A real estate web platform with data analytics applied to marketing.",
+                "Features a custom SQLite database and full-stack architecture developed with Python and Django."
+            ],
+            es: [
+                "Plataforma web inmobiliaria con analítica de datos aplicada al marketing.",
+                "Cuenta con una base de datos SQLite personalizada y arquitectura full-stack desarrollada con Python y Django."
+            ]
         },
         techStack: ["Python", "Django", "SQLite", "JavaScript", "CSS3"],
         liveUrl: "https://terrastudio.cl",
@@ -196,8 +202,14 @@ const PROJECTS = [
         id: 2,
         title: { en: "Psiconexo", es: "Psiconexo" },
         description: {
-            en: "Appointment management system for psychologists. Built with a scalable architecture using Go for the backend.",
-            es: "Sistema de gestión de turnos para psicólogos. Construido con una arquitectura escalable utilizando Go en el backend."
+            en: [
+                "Appointment management system for psychologists.",
+                "Built with a scalable architecture using Go for the backend."
+            ],
+            es: [
+                "Sistema de gestión de turnos para psicólogos.",
+                "Construido con una arquitectura escalable utilizando Go en el backend."
+            ]
         },
         techStack: ["Go (Golang)", "HTML5", "CSS3", "JavaScript"],
         liveUrl: "#",
@@ -207,8 +219,14 @@ const PROJECTS = [
         id: 3,
         title: { en: "Portfolio Quest", es: "Portfolio Quest" },
         description: {
-            en: "This interactive gamified portfolio. Features a custom 2D physics engine, collision detection, and HTML5 Canvas rendering.",
-            es: "Este portafolio interactivo gamificado. Motor de físicas 2D personalizado, detección de colisiones y renderizado en Canvas."
+            en: [
+                "This interactive gamified portfolio.",
+                "Features a custom 2D physics engine, collision detection, and HTML5 Canvas rendering."
+            ],
+            es: [
+                "Este portafolio interactivo gamificado.",
+                "Motor de físicas 2D personalizado, detección de colisiones y renderizado en Canvas."
+            ]
         },
         techStack: ["JavaScript", "HTML5 Canvas", "CSS3", "Game Dev"],
         liveUrl: "#",
@@ -218,8 +236,14 @@ const PROJECTS = [
         id: 4,
         title: { en: "Data Science Labs", es: "Laboratorio Data Science" },
         description: {
-            en: "A comprehensive repository of data science implementations: Mathematical optimization, Deep Learning, and Data Quality processes.",
-            es: "Repositorio integral de implementaciones de ciencia de datos: Optimización matemática, Deep Learning y procesos de Calidad de Datos."
+            en: [
+                "A comprehensive repository of data science implementations.",
+                "Includes Mathematical optimization, Deep Learning, and Data Quality processes."
+            ],
+            es: [
+                "Repositorio integral de implementaciones de ciencia de datos.",
+                "Incluye Optimización matemática, Deep Learning y procesos de Calidad de Datos."
+            ]
         },
         techStack: ["Python", "PyTorch", "Pandas", "Scikit-learn", "Jupyter"],
         liveUrl: "#",
@@ -231,8 +255,14 @@ const PROJECTS = [
 const CONTACT_INFO = {
     title: { en: "Let's Connect!", es: "¡Conectemos!" },
     description: {
-        en: "Feel free to reach out! I'm always open to new opportunities and collaborations.",
-        es: "¡No dudes en contactarme! Siempre estoy abierto a nuevas oportunidades y colaboraciones."
+        en: [
+            "Feel free to reach out!",
+            "I'm always open to new opportunities and collaborations."
+        ],
+        es: [
+            "¡No dudes en contactarme!",
+            "Siempre estoy abierto a nuevas oportunidades y colaboraciones."
+        ]
     },
     links: [
         { type: 'github', label: 'GitHub', url: 'https://github.com/luciluz', icon: '🐙' },
@@ -336,6 +366,12 @@ class SoundManager {
         this.createBeep(1200, 0.02, 'square', 0.05);
         setTimeout(() => this.createBeep(1100, 0.02, 'square', 0.05), 50);
         setTimeout(() => this.createBeep(1300, 0.02, 'square', 0.05), 100);
+    }
+
+    playDialogBlip() {
+        if (!this.audioContext) this.init();
+        // Short high pitch blip for dialogue
+        this.createBeep(1500 + Math.random() * 200, 0.03, 'triangle', 0.02);
     }
 
     playBGM() {
@@ -1009,11 +1045,85 @@ canvas.addEventListener('mousemove', (e) => {
         canvas.style.cursor = 'default';
     }
 });
-
+// Note: mouseleave listener ensures we don't get stuck in hover state
 canvas.addEventListener('mouseleave', () => {
     mouse.onCanvas = false;
     NEON_SIGN.isHovered = false;
     CONTACT_SIGN.isHovered = false;
+    // Also clear coding state if active
+    player.isCoding = false;
+});
+
+// ============ TOUCH CONTROLS (Mobile) ============
+let touchStartX = 0;
+let touchStartTime = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartTime = performance.now();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartX;
+
+    // Slide Threshold: 30px
+    if (diffX < -30) {
+        keys.left = true;
+        keys.right = false;
+    } else if (diffX > 30) {
+        keys.right = true;
+        keys.left = false;
+    } else {
+        // Stop if within deadzone
+        keys.left = false;
+        keys.right = false;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const touchDuration = performance.now() - touchStartTime;
+    const touchEndX = e.changedTouches[0].clientX;
+    const totalDist = Math.abs(touchEndX - touchStartX);
+
+    // Stop movement
+    keys.left = false;
+    keys.right = false;
+
+    // Check for Tap (Jump)
+    // Short duration (< 200ms) and minimal movement (< 10px)
+    if (touchDuration < 200 && totalDist < 10) {
+        keys.jump = true;
+        // Reset jump key shortly after to prevent infinite jump
+        setTimeout(() => keys.jump = false, 150);
+    }
+});
+
+// ============ DYNAMIC INSTRUCTIONS ============
+function checkMobileInstructions() {
+    const instructions = document.getElementById('instructions-text');
+    const isMobile = window.innerWidth < 800 || 'ontouchstart' in window;
+
+    if (isMobile) {
+        instructions.textContent = currentLang === 'en'
+            ? "Tap to JUMP | Slide to MOVE"
+            : "Toca para SALTAR | Desliza para MOVER";
+    } else {
+        instructions.textContent = currentLang === 'en'
+            ? "Use ← → or A D to move | ↑ W SPACE to jump"
+            : "Usa ← → o A D para moverte | ↑ W ESPACIO para saltar";
+    }
+}
+
+// Call on load and resize
+checkMobileInstructions();
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    checkMobileInstructions();
 });
 
 // Initialize audio on first interaction
@@ -1567,7 +1677,6 @@ function drawParticles() {
 // ============ HUD PANEL HANDLING ============
 const modalOverlay = document.getElementById('modal-overlay');
 const projectModal = document.getElementById('project-modal');
-const modalClose = document.getElementById('modal-close');
 const projectTitle = document.getElementById('project-title');
 const projectDescription = document.getElementById('project-description');
 const techTags = document.getElementById('tech-tags');
@@ -1575,15 +1684,80 @@ const projectLinks = document.getElementById('project-links');
 const modalContent = document.getElementById('modal-content');
 
 let hudOpen = false;
+let dialogueChunks = [];
+let currentChunkIndex = 0;
+let isTyping = false;
+let typeInterval;
+
+function typewriter(text, element, speed = 30) {
+    element.innerHTML = '';
+    isTyping = true;
+    let i = 0;
+
+    // Reset tech stack and links visibility during typing
+    document.getElementById('tech-stack').style.opacity = '0';
+    document.getElementById('project-links').style.opacity = '0';
+
+    // Clear any existing interval to be safe
+    clearInterval(typeInterval);
+
+    typeInterval = setInterval(() => {
+        element.textContent += text.charAt(i);
+        soundManager.playDialogBlip();
+        i++;
+        if (i > text.length - 1) {
+            clearInterval(typeInterval);
+            isTyping = false;
+
+            // Add blinking cursor if more chunks available
+            if (currentChunkIndex < dialogueChunks.length - 1) {
+                const cursor = document.createElement('span');
+                cursor.className = 'blink-cursor';
+                cursor.textContent = ' ▼';
+                element.appendChild(cursor);
+            } else {
+                // Last chunk finished - show controls
+                document.getElementById('tech-stack').style.transition = 'opacity 0.5s';
+                document.getElementById('project-links').style.transition = 'opacity 0.5s';
+                document.getElementById('tech-stack').style.opacity = '1';
+                document.getElementById('project-links').style.opacity = '1';
+            }
+        }
+    }, speed);
+}
 
 function showProjectModal(project) {
     currentProjectId = project.id;
     // Localize content based on currentLang with fallback
     const title = project.title[currentLang] || project.title['en'] || project.title;
-    const desc = project.description[currentLang] || project.description['en'] || project.description;
+    const descData = project.description[currentLang] || project.description['en'] || project.description;
+
+    // Load chunks
+    dialogueChunks = Array.isArray(descData) ? descData : [descData];
+    currentChunkIndex = 0;
 
     projectTitle.textContent = title;
-    projectDescription.textContent = desc;
+
+    // HYBRID MODAL LOGIC
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        // MOBILE: Typewriter Effect
+        typewriter(dialogueChunks[0], projectDescription);
+    } else {
+        // DESKTOP: Instant Render
+        clearInterval(typeInterval);
+        isTyping = false;
+        projectDescription.innerHTML = dialogueChunks.join(' ');
+
+        // Ensure UI is visible immediately
+        const techStackContainer = document.getElementById('tech-stack');
+        if (techStackContainer) {
+            techStackContainer.style.display = 'block';
+            techStackContainer.style.opacity = '1';
+        }
+        document.getElementById('project-links').style.opacity = '1';
+    }
 
     // Ensure Tech Stack section is visible for projects
     const techStackContainer = document.getElementById('tech-stack');
@@ -1631,10 +1805,39 @@ function showContactModal() {
 
     // Localize Title and Description
     const title = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
-    const desc = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
+    const descData = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
+
+    // Load chunks
+    dialogueChunks = Array.isArray(descData) ? descData : [descData];
+    currentChunkIndex = 0;
 
     projectTitle.textContent = title;
-    projectDescription.textContent = desc;
+
+    // HYBRID MODAL LOGIC
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        // MOBILE: Typewriter Effect
+        // ensure UI is hidden initially for reveal
+        const ts = document.getElementById('tech-stack');
+        if (ts) ts.style.opacity = '0';
+        document.getElementById('project-links').style.opacity = '0';
+
+        typewriter(dialogueChunks[0], projectDescription);
+    } else {
+        // DESKTOP: Instant Render
+        clearInterval(typeInterval); // Check safety
+        isTyping = false;
+        projectDescription.innerHTML = dialogueChunks.join(' ');
+
+        // Ensure UI is visible immediately
+        const ts = document.getElementById('tech-stack');
+        if (ts) {
+            ts.style.display = 'block';
+            ts.style.opacity = '1';
+        }
+        document.getElementById('project-links').style.opacity = '1';
+    }
 
     // Hide Tech Stack section for contact modal
     const techStackContainer = document.getElementById('tech-stack');
@@ -1731,15 +1934,59 @@ function hideProjectModal() {
     modalOverlay.classList.add('hidden');
     projectModal.classList.remove('active');
     hudOpen = false;
+    clearInterval(typeInterval);
+    isTyping = false;
     player.clearForcedState();
 }
 
-modalClose.addEventListener('click', hideProjectModal);
+
 modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) hideProjectModal();
 });
+
+// Tap-to-Advance / Skip Logic
+modalContent.addEventListener('click', (e) => {
+    // DESKTOP CHECK: Disable text advancement on desktop
+    if (window.innerWidth > 768) return;
+
+    // Ignore clicks on buttons/links/tags to allow interaction
+    if (e.target.closest('a') || e.target.closest('.tech-tag')) return;
+
+    if (isTyping) {
+        // SKIP ANIMATION
+        clearInterval(typeInterval);
+        isTyping = false;
+        projectDescription.textContent = dialogueChunks[currentChunkIndex];
+
+        // Add blinking cursor if more chunks available
+        if (currentChunkIndex < dialogueChunks.length - 1) {
+            const cursor = document.createElement('span');
+            cursor.className = 'blink-cursor';
+            cursor.textContent = ' ▼';
+            projectDescription.appendChild(cursor);
+        } else {
+            // Last chunk finished - show controls
+            document.getElementById('tech-stack').style.transition = 'opacity 0.5s';
+            document.getElementById('project-links').style.transition = 'opacity 0.5s';
+            document.getElementById('tech-stack').style.opacity = '1';
+            document.getElementById('project-links').style.opacity = '1';
+        }
+    } else {
+        // ADVANCE TO NEXT CHUNK
+        if (currentChunkIndex < dialogueChunks.length - 1) {
+            currentChunkIndex++;
+            typewriter(dialogueChunks[currentChunkIndex], projectDescription);
+        }
+    }
+});
+
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideProjectModal();
+});
+
+// Handle Window Resize - Close modal to prevent mixed states
+window.addEventListener('resize', () => {
+    if (hudOpen) hideProjectModal();
 });
 
 // ============ MUTE BUTTON HANDLING ============

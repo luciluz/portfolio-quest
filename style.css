@@ -74,7 +74,25 @@ body {
         var(--shadow-card);
     display: flex;
     flex-direction: column;
-    max-width: 100%;
+    width: 100%;
+    max-width: 900px;
+}
+
+#canvas-wrapper {
+    width: 100%;
+    position: relative;
+    border: 2px solid var(--accent-secondary);
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
+    background: #000;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    /* Disables browser zooming/scrolling */
 }
 
 #game-toolbar {
@@ -744,6 +762,20 @@ body {
    RESPONSIVE
    ======================================== */
 
+/* Typewriter Cursor */
+.blink-cursor {
+    display: inline-block;
+    animation: cursor-blink 1s step-end infinite;
+    color: var(--accent-gold);
+    margin-left: 2px;
+}
+
+@keyframes cursor-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
 @media (max-width: 768px) {
     #game-header h1 {
         font-size: 0.9rem;
@@ -778,6 +810,21 @@ body {
         font-size: 0.45rem;
         padding: 0.4rem 0.5rem;
         min-width: 80px;
+    }
+
+    #project-title {
+        font-size: 0.7rem;
+        /* Ensure title is smaller */
+        margin-bottom: 0.5rem;
+    }
+
+    #project-modal {
+        max-height: 80vh;
+        /* Safety net prevents cutoff */
+        overflow-y: auto;
+        /* Enable scroll if text is too long */
+        padding: 0.8rem;
+        /* Use less space */
     }
 }
 
