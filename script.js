@@ -34,12 +34,12 @@ const TRANSLATIONS = {
         contactLabel: 'CONTACT',
         contactTitle: "Let's Connect!",
         contactDesc: "Feel free to reach out! I'm always open to new opportunities and collaborations.",
-        viewLive: 'View Live',
-        sourceCode: 'Source Code',
+        viewLive: 'View Project',
+        sourceCode: 'Repository',
         techStackLabel: 'Tech Stack',
         hudLabel: 'Project Info',
         emailTooltip: 'luciruzvelos@gmail.com',
-        footer: '© 2026 Luciano Ruz | M Toggle Music | HTML5 Canvas'
+        footer: '© 2026 Luciano Ruz | HTML5 Canvas'
     },
     es: {
         gameTitle: 'LUCIANO RUZ PORTFOLIO',
@@ -49,12 +49,12 @@ const TRANSLATIONS = {
         contactLabel: 'CONTACTO',
         contactTitle: '¡Conectemos!',
         contactDesc: '¡No dudes en contactarme! Siempre estoy abierta a nuevas oportunidades.',
-        viewLive: 'Ver Demo',
-        sourceCode: 'Código',
+        viewLive: 'Ver Proyecto',
+        sourceCode: 'Repositorio',
         techStackLabel: 'Tecnologías',
         hudLabel: 'Info del Proyecto',
         emailTooltip: 'luciruzvelos@gmail.com',
-        footer: '© 2026 Luciano Ruz | M Música | HTML5 Canvas'
+        footer: '© 2026 Luciano Ruz | HTML5 Canvas'
     }
 };
 
@@ -183,47 +183,47 @@ const CONFIG = {
 const PROJECTS = [
     {
         id: 1,
-        title: { en: "E-Commerce Platform", es: "Plataforma E-Commerce" },
+        title: { en: "TerraStudio", es: "TerraStudio" },
         description: {
-            en: "A full-stack e-commerce solution with real-time inventory management, secure payment processing, and an intuitive admin dashboard.",
-            es: "Solución completa de comercio electrónico con gestión de inventario en tiempo real, pagos seguros y panel de administración intuitivo."
+            en: "A real estate web platform with data analytics applied to marketing. Features a custom SQLite database and full-stack architecture.",
+            es: "Plataforma web inmobiliaria con analítica de datos aplicada al marketing. Gestión de base de datos y arquitectura full-stack."
         },
-        techStack: ["React", "Node.js", "MongoDB", "Stripe API", "Redux"],
-        liveUrl: "#",
-        sourceUrl: "#"
+        techStack: ["Python", "Django", "SQLite", "JavaScript", "CSS3"],
+        liveUrl: "https://terrastudio.cl",
+        sourceUrl: "https://github.com/luciluz/terrastudio"
     },
     {
         id: 2,
-        title: { en: "Weather Dashboard", es: "Panel Meteorológico" },
+        title: { en: "Psiconexo", es: "Psiconexo" },
         description: {
-            en: "An interactive weather application that provides real-time forecasts, animated weather visualizations, and location-based services.",
-            es: "Aplicación meteorológica interactiva con pronósticos en tiempo real, visualizaciones animadas y servicios basados en ubicación."
+            en: "Appointment management system for psychologists. Built with a scalable architecture using Go for the backend.",
+            es: "Sistema de gestión de turnos para psicólogos. Construido con una arquitectura escalable utilizando Go en el backend."
         },
-        techStack: ["Vue.js", "OpenWeather API", "Chart.js", "Geolocation API"],
+        techStack: ["Go (Golang)", "HTML5", "CSS3", "JavaScript"],
         liveUrl: "#",
-        sourceUrl: "#"
+        sourceUrl: "https://github.com/luciluz/psiconexo"
     },
     {
         id: 3,
-        title: { en: "Task Management App", es: "Gestor de Tareas" },
+        title: { en: "Portfolio Quest", es: "Portfolio Quest" },
         description: {
-            en: "A Kanban-style productivity tool with drag-and-drop functionality, real-time collaboration features, and customizable workflows.",
-            es: "Herramienta de productividad estilo Kanban con funcionalidad drag-and-drop, colaboración en tiempo real y flujos de trabajo personalizables."
+            en: "This interactive gamified portfolio. Features a custom 2D physics engine, collision detection, and HTML5 Canvas rendering.",
+            es: "Este portafolio interactivo gamificado. Motor de físicas 2D personalizado, detección de colisiones y renderizado en Canvas."
         },
-        techStack: ["TypeScript", "Next.js", "PostgreSQL", "Socket.io"],
+        techStack: ["JavaScript", "HTML5 Canvas", "CSS3", "Game Dev"],
         liveUrl: "#",
-        sourceUrl: "#"
+        sourceUrl: "https://github.com/luciluz/portfolio-quest"
     },
     {
         id: 4,
-        title: { en: "AI Image Generator", es: "Generador de Imágenes IA" },
+        title: { en: "Data Science Labs", es: "Laboratorio Data Science" },
         description: {
-            en: "A creative tool powered by machine learning that generates unique artwork from text prompts. Features style transfer and image upscaling.",
-            es: "Herramienta creativa impulsada por ML que genera arte único a partir de texto. Incluye transferencia de estilo y escalado de imágenes."
+            en: "A comprehensive repository of data science implementations: Mathematical optimization, Deep Learning, and Data Quality processes.",
+            es: "Repositorio integral de implementaciones de ciencia de datos: Optimización matemática, Deep Learning y procesos de Calidad de Datos."
         },
-        techStack: ["Python", "TensorFlow", "FastAPI", "React"],
+        techStack: ["Python", "PyTorch", "Pandas", "Scikit-learn", "Jupyter"],
         liveUrl: "#",
-        sourceUrl: "#"
+        sourceUrl: "https://github.com/luciluz/data_science"
     }
 ];
 
