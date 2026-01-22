@@ -1779,22 +1779,39 @@ function showProjectModal(project) {
             mobileTechTags.appendChild(tag);
         });
 
-        // Actions (Apply New Classes)
-        const liveBtn = document.getElementById('mobile-live-btn');
-        const sourceBtn = document.getElementById('mobile-source-btn');
-        liveBtn.href = project.liveUrl;
-        sourceBtn.href = project.sourceUrl;
+        // --- UPDATE ACTIONS (Dynamic Rebuild) ---
+        const actionsContainer = document.querySelector('.mobile-actions');
+        actionsContainer.innerHTML = ''; // Clear Contact Buttons if present
         
-        // Apply Classes: Live -> Pink, Source -> Cyan
-        liveBtn.className = 'btn btn-pink'; 
-        liveBtn.innerHTML = t('viewLive'); // Ensure text is correct if needed
+        // Reset Style (in case Contact changed it)
+        actionsContainer.style.display = 'flex';
+        actionsContainer.style.flexDirection = 'row'; // Row for Project Buttons
+        actionsContainer.style.gap = '10px';
+        actionsContainer.style.flexWrap = 'wrap';
+        actionsContainer.style.justifyContent = 'center';
 
+        // 1. Live Button (Pink)
+        const liveBtn = document.createElement('a');
+        liveBtn.className = 'btn btn-pink';
+        liveBtn.href = project.liveUrl;
+        liveBtn.target = '_blank';
+        liveBtn.innerHTML = t('viewLive');
+        liveBtn.style.flex = '1';
+        
+        // 2. Source Button (Cyan)
+        const sourceBtn = document.createElement('a');
         sourceBtn.className = 'btn btn-cyan';
+        sourceBtn.href = project.sourceUrl;
+        sourceBtn.target = '_blank';
         sourceBtn.innerHTML = t('sourceCode');
+        sourceBtn.style.flex = '1';
+
+        actionsContainer.appendChild(liveBtn);
+        actionsContainer.appendChild(sourceBtn);
 
         // Ensure visibility
         document.getElementById('mobile-tech-stack').style.display = 'flex';
-        document.querySelector('.mobile-actions').style.display = 'flex';
+        actionsContainer.style.display = 'flex';
 
         // VISIBILITY
         mobilePanel.classList.remove('hidden');
