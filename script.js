@@ -255,8 +255,8 @@ const PROJECTS = [
 const CONTACT_INFO = {
     title: { en: "Let's Connect!", es: "¡Conectemos!" },
     description: {
-        en: [ "Feel free to reach out!", "I'm always open to new opportunities and collaborations." ],
-        es: [ "¡No dudes en contactarme!", "Siempre estoy abierto a nuevas oportunidades y colaboraciones." ]
+        en: ["Feel free to reach out!", "I'm always open to new opportunities and collaborations."],
+        es: ["¡No dudes en contactarme!", "Siempre estoy abierto a nuevas oportunidades y colaboraciones."]
     },
     links: [
         { type: 'github', label: 'GitHub', url: 'https://github.com/luciluz', icon: '🐙' },
@@ -1494,6 +1494,79 @@ class Block {
     }
 }
 
+// ============ INFO BLOCK CLASS (For ME Room) ============
+class InfoBlock extends Block {
+    constructor(x, y, symbol, options = {}) {
+        super(x, y);
+        this.symbol = symbol || '?';
+        this.content = options; // { type, data, icon, color, glow }
+        this.width = 60;
+        this.height = 60;
+    }
+
+    trigger() {
+        if (!this.canTrigger()) return;
+        this.startCooldown();
+        this.bounceVelocity = -8;
+        createParticles(this.x + this.width / 2, this.y + this.height / 2, 15, CONFIG.COLORS.particle); // Default particle color
+        soundManager.playBump();
+        soundManager.playCoin();
+
+        // Use generic showProjectModal
+        showProjectModal(this.content.data);
+    }
+
+    draw() {
+        const scale = getScale();
+        const x = this.x * scale;
+        const y = (this.y + this.bounceOffset) * scale;
+        const w = this.width * scale;
+        const h = this.height * scale;
+        const onCooldown = this.isOnCooldown();
+
+        // Custom Color or Gold Default
+        const baseColor = this.content.color || '#FFD700';
+
+        if (!onCooldown) {
+            ctx.shadowColor = this.content.glow || baseColor;
+            ctx.shadowBlur = 15 * this.glowIntensity;
+        }
+
+        const color = onCooldown ? CONFIG.COLORS.blockCooldown : baseColor;
+        const highlight = onCooldown ? '#777' : 'rgba(255,255,255,0.4)';
+        const shadow = onCooldown ? '#555' : 'rgba(0,0,0,0.2)';
+
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+
+        // 3D Bevels
+        ctx.fillStyle = highlight;
+        ctx.fillRect(x, y, w, 6 * scale);
+        ctx.fillRect(x, y, 6 * scale, h);
+        ctx.fillStyle = shadow;
+        ctx.fillRect(x, y + h - 6 * scale, w, 6 * scale);
+        ctx.fillRect(x + w - 6 * scale, y, 6 * scale, h);
+
+        if (!onCooldown) {
+            ctx.fillStyle = '#FFF'; // Symbol Color
+            ctx.font = `bold ${24 * scale}px 'Press Start 2P', cursive`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Use custom icon if provided, else symbol
+            const txt = this.content.icon || this.symbol;
+            ctx.fillText(txt, x + w / 2, y + h / 2);
+        } else {
+            // Cooldown progress indicator
+            const progress = this.getCooldownProgress();
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(x, y + h * (1 - progress), w, h * progress);
+        }
+
+        // Reset Shadow
+        ctx.shadowBlur = 0;
+    }
+}
+
 // ============ PROJECT BLOCK CLASS ============
 class ProjectBlock extends Block {
     constructor(x, y, projectIndex) {
@@ -1678,6 +1751,7 @@ const projectLinks = document.getElementById('project-links');
 const modalContent = document.getElementById('modal-content');
 
 let hudOpen = false;
+let gameState = 'MAIN';
 let dialogueChunks = [];
 let currentChunkIndex = 0;
 let isTyping = false;
@@ -1729,10 +1803,10 @@ function typeMobileText(text, elementId, speed = 20) {
     clearInterval(mobileTypingInterval);
     const target = document.getElementById(elementId);
     if (!target) return;
-    
+
     target.textContent = '';
     isMobileTyping = true;
-    
+
     let i = 0;
     mobileTypingInterval = setInterval(() => {
         target.textContent += text.charAt(i);
@@ -1755,20 +1829,20 @@ function showProjectModal(project) {
     // Load full text
     dialogueChunks = Array.isArray(descData) ? descData : [descData];
     const fullDescription = dialogueChunks.join(' ');
-    
+
     // HYBRID SYSTEM
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
         // --- MOBILE: EXTERNAL PANEL ---
         const mobilePanel = document.getElementById('mobile-project-panel');
-        
+
         // Populate Title
         document.getElementById('mobile-title').textContent = title;
-        
+
         // Populate Description with RPG Typewriter
         typeMobileText(fullDescription, 'mobile-desc');
-        
+
         // Tech Stack
         const mobileTechTags = document.getElementById('mobile-tech-stack');
         mobileTechTags.innerHTML = '';
@@ -1782,7 +1856,7 @@ function showProjectModal(project) {
         // --- UPDATE ACTIONS (Dynamic Rebuild) ---
         const actionsContainer = document.querySelector('.mobile-actions');
         actionsContainer.innerHTML = ''; // Clear Contact Buttons if present
-        
+
         // Reset Style (in case Contact changed it)
         actionsContainer.style.display = 'flex';
         actionsContainer.style.flexDirection = 'row'; // Row for Project Buttons
@@ -1797,7 +1871,7 @@ function showProjectModal(project) {
         liveBtn.target = '_blank';
         liveBtn.innerHTML = t('viewLive');
         liveBtn.style.flex = '1';
-        
+
         // 2. Source Button (Cyan)
         const sourceBtn = document.createElement('a');
         sourceBtn.className = 'btn btn-cyan';
@@ -1817,7 +1891,7 @@ function showProjectModal(project) {
         mobilePanel.classList.remove('hidden');
         mobilePanel.classList.add('active');
         hudOpen = true;
-        
+
         modalOverlay.classList.add('hidden');
         projectModal.classList.remove('active');
 
@@ -1832,7 +1906,7 @@ function showProjectModal(project) {
         clearInterval(typeInterval);
         isTyping = false;
         projectDescription.innerHTML = fullDescription;
-        
+
         const techStackContainer = document.getElementById('tech-stack');
         if (techStackContainer) {
             techStackContainer.style.display = 'block';
@@ -1879,34 +1953,34 @@ function refreshModalContent() {
 
 function showContactModal() {
     currentProjectId = null;
-    
+
     // Localize Data
     const title = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
     const descData = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
     const descText = Array.isArray(descData) ? descData.join(' ') : descData;
-    
+
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
         // --- MOBILE: CONTACT PANEL ---
         const mobilePanel = document.getElementById('mobile-project-panel');
-        
+
         // Set Title
         document.getElementById('mobile-title').textContent = title;
-        
+
         // Type Description
         typeMobileText(descText, 'mobile-desc');
 
         // HIDE Tech Stack
         document.getElementById('mobile-tech-stack').style.display = 'none';
-        
+
         // SHOW Actions and Populate
         const actionsContainer = document.querySelector('.mobile-actions');
         actionsContainer.style.display = 'flex';
         actionsContainer.style.flexDirection = 'column'; // Vertical Stack for Rows
         actionsContainer.style.gap = '15px';
         actionsContainer.innerHTML = '';
-        
+
         // Row 1: Socials (Cyan)
         const socialRow = document.createElement('div');
         socialRow.style.display = 'flex';
@@ -1920,14 +1994,14 @@ function showContactModal() {
 
         CONTACT_INFO.links.forEach(link => {
             const btn = document.createElement('a');
-            
+
             if (link.type === 'email') {
                 btn.className = 'btn btn-pink'; // Pink for Email
                 btn.href = '#';
                 btn.innerHTML = `${link.icon} ${link.email} <i class="fas fa-copy" style="margin-left:5px"></i>`;
                 btn.style.width = '100%';
                 btn.style.textAlign = 'center';
-                
+
                 btn.onclick = (e) => {
                     e.preventDefault();
                     navigator.clipboard.writeText(link.email).then(() => {
@@ -1954,7 +2028,7 @@ function showContactModal() {
         mobilePanel.classList.remove('hidden');
         mobilePanel.classList.add('active');
         hudOpen = true;
-        
+
         modalOverlay.classList.add('hidden');
         projectModal.classList.remove('active');
 
@@ -1964,19 +2038,19 @@ function showContactModal() {
 
     } else {
         // --- DESKTOP: OVERLAY MODAL ---
-        
+
         projectTitle.textContent = title;
-        
+
         clearInterval(typeInterval);
         isTyping = false;
         projectDescription.innerHTML = descText;
-        
+
         const techStackContainer = document.getElementById('tech-stack');
         if (techStackContainer) techStackContainer.style.display = 'none';
         document.getElementById('project-links').style.opacity = '1';
 
         projectLinks.innerHTML = '';
-        
+
         // 1. Social Row (GitHub, LinkedIn) - Cyan
         const socialRow = document.createElement('div');
         socialRow.style.display = 'flex';
@@ -1991,14 +2065,14 @@ function showContactModal() {
 
         CONTACT_INFO.links.forEach(link => {
             const btn = document.createElement('a');
-            
+
             if (link.type === 'email') {
                 btn.className = 'btn btn-pink'; // Pink
                 btn.href = '#';
                 btn.innerHTML = `${link.icon} ${link.email} <i class="fas fa-copy" style="margin-left:5px"></i>`;
-                btn.style.minWidth = '250px'; 
+                btn.style.minWidth = '250px';
                 btn.style.textAlign = 'center';
-                
+
                 btn.onclick = (e) => {
                     e.preventDefault();
                     navigator.clipboard.writeText(link.email).then(() => {
@@ -2035,18 +2109,18 @@ function hideProjectModal() {
     // Hide Overlay (Desktop)
     modalOverlay.classList.add('hidden');
     projectModal.classList.remove('active');
-    
+
     // Hide External Panel (Mobile)
     const mobilePanel = document.getElementById('mobile-project-panel');
     if (mobilePanel) {
         mobilePanel.classList.remove('active');
         mobilePanel.classList.add('hidden');
     }
-    
+
     // Cleanup Mobile Typewriter
     clearInterval(mobileTypingInterval);
     isMobileTyping = false;
-    
+
     // Reset Mobile Panel State for next open
     const mobileTechStack = document.getElementById('mobile-tech-stack');
     if (mobileTechStack) mobileTechStack.style.display = 'flex';
@@ -2134,12 +2208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const respawnBtn = document.getElementById('respawn-btn');
     if (respawnBtn) {
         respawnBtn.addEventListener('click', () => {
-            player.x = 430;
-            player.y = 400;
-            player.vx = 0;
-            player.vy = 0;
-            player.width = 40;
-            player.forcedState = null; // Clear states
+            location.reload();
         });
     }
 });
@@ -2325,21 +2394,82 @@ const blocks = [
 ];
 
 // ============ GAME LOOP ============
+
+function drawMeDoor() {
+    const scale = getScale();
+    // Position: Between platforms. 
+    // Left platform ends ~480. Right starts 680. Center area ~580. Y=460 (Main floor).
+    // Door size ~50x70.
+    const meDoor = { x: 580 * scale, y: 390 * scale, w: 50 * scale, h: 70 * scale };
+
+    ctx.save();
+    ctx.strokeStyle = '#00d9ff';
+    ctx.shadowColor = '#00d9ff';
+    ctx.shadowBlur = 10 * scale;
+    ctx.lineWidth = 2 * scale;
+    ctx.strokeRect(meDoor.x, meDoor.y, meDoor.w, meDoor.h);
+
+    // Text ME
+    ctx.fillStyle = '#e94560'; // Pink
+    ctx.font = `bold ${12 * scale}px 'Press Start 2P'`;
+    ctx.textAlign = 'center';
+
+    // Floating effect
+    const floatY = Math.sin(Date.now() / 300) * 5 * scale;
+    ctx.fillText("ME", meDoor.x + meDoor.w / 2, meDoor.y - 15 * scale + floatY);
+
+    ctx.restore();
+}
+
 function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawCity();  // City skyline background
-    drawBackground();  // Stars/clouds
-    drawNeonSign();
-    drawContactLabel();  // Contact neon sign
+    if (gameState === 'MAIN') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCity();  // City skyline background
+        drawBackground();  // Stars/clouds
+        drawNeonSign();
+        drawContactLabel();  // Contact neon sign
 
-    player.update(platforms, blocks);
-    blocks.forEach(block => block.update());
-    updateParticles();
+        // Draw ME Door
+        drawMeDoor();
 
-    platforms.forEach(platform => platform.draw());
-    blocks.forEach(block => block.draw());
-    player.draw();
-    drawParticles();
+        // Update
+        player.update(platforms, blocks);
+        blocks.forEach(block => block.update());
+        updateParticles();
+
+        // ME Door Logic
+        const scale = getScale();
+        const meDoor = { x: 580 * scale, y: 390 * scale, w: 50 * scale, h: 70 * scale };
+        // Player hitbox center
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+
+        if (px > meDoor.x && px < meDoor.x + meDoor.w &&
+            py > meDoor.y && py < meDoor.y + meDoor.h) {
+            // Hint
+            ctx.save();
+            ctx.fillStyle = "white";
+            ctx.font = `10px 'Press Start 2P'`;
+            ctx.textAlign = 'center';
+            ctx.fillText("Press UP", meDoor.x + meDoor.w / 2, meDoor.y - 35 * scale);
+            ctx.restore();
+
+            if (keys.jump && !hudOpen) { // keys.jump is usually UP/W/Space
+                gameState = 'ME_ROOM';
+                setupMeRoom();
+            }
+        }
+
+        // Draw
+        platforms.forEach(platform => platform.draw());
+        blocks.forEach(block => block.draw());
+        player.draw();
+        drawParticles();
+
+    } else if (gameState === 'ME_ROOM') {
+        updateMeRoom();
+        drawMeRoom();
+    }
 
     requestAnimationFrame(gameLoop);
 }
@@ -2364,3 +2494,5 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 console.log('🎮 Portfolio Quest v3.0 loaded!');
 console.log('Screen wrap enabled - walk off one side, appear on the other!');
 console.log('Blocks now have cooldowns and can be re-triggered!');
+
+
