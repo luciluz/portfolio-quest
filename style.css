@@ -860,7 +860,9 @@ body {
 
 #project-modal::-webkit-scrollbar-thumb:hover {
     background: var(--accent-primary);
-}/* ========================================
+}
+
+/* ========================================
    MOBILE INFO PANEL (EXTERNAL - HARD RESET)
    ======================================== */
 #mobile-project-panel {
@@ -957,4 +959,34 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}/* ========================================
+   SCREENSHOT DESIGN MATCH 
+   ======================================== */
+
+.btn-pink {
+    background: linear-gradient(135deg, #e94560, #d13a55);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+}
+
+.btn-pink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
+    color: white;
+    /* Ensure text stays white */
+}
+
+.btn-cyan {
+    background: transparent;
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.1);
+}
+
+.btn-cyan:hover {
+    background: rgba(0, 217, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+    color: #00d9ff;
 }

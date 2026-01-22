@@ -255,14 +255,8 @@ const PROJECTS = [
 const CONTACT_INFO = {
     title: { en: "Let's Connect!", es: "¡Conectemos!" },
     description: {
-        en: [
-            "Feel free to reach out!",
-            "I'm always open to new opportunities and collaborations."
-        ],
-        es: [
-            "¡No dudes en contactarme!",
-            "Siempre estoy abierto a nuevas oportunidades y colaboraciones."
-        ]
+        en: [ "Feel free to reach out!", "I'm always open to new opportunities and collaborations." ],
+        es: [ "¡No dudes en contactarme!", "Siempre estoy abierto a nuevas oportunidades y colaboraciones." ]
     },
     links: [
         { type: 'github', label: 'GitHub', url: 'https://github.com/luciluz', icon: '🐙' },
@@ -1785,13 +1779,20 @@ function showProjectModal(project) {
             mobileTechTags.appendChild(tag);
         });
 
-        // Actions
+        // Actions (Apply New Classes)
         const liveBtn = document.getElementById('mobile-live-btn');
         const sourceBtn = document.getElementById('mobile-source-btn');
         liveBtn.href = project.liveUrl;
         sourceBtn.href = project.sourceUrl;
         
-        // Ensure visibility (reset from Contact mode)
+        // Apply Classes: Live -> Pink, Source -> Cyan
+        liveBtn.className = 'btn btn-pink'; 
+        liveBtn.innerHTML = t('viewLive'); // Ensure text is correct if needed
+
+        sourceBtn.className = 'btn btn-cyan';
+        sourceBtn.innerHTML = t('sourceCode');
+
+        // Ensure visibility
         document.getElementById('mobile-tech-stack').style.display = 'flex';
         document.querySelector('.mobile-actions').style.display = 'flex';
 
@@ -1800,11 +1801,9 @@ function showProjectModal(project) {
         mobilePanel.classList.add('active');
         hudOpen = true;
         
-        // Ensure overlay is hidden
         modalOverlay.classList.add('hidden');
         projectModal.classList.remove('active');
 
-        // SCROLL
         setTimeout(() => {
             mobilePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -1813,12 +1812,10 @@ function showProjectModal(project) {
         // --- DESKTOP: OVERLAY MODAL ---
         projectTitle.textContent = title;
 
-        // Instant Render
         clearInterval(typeInterval);
         isTyping = false;
         projectDescription.innerHTML = fullDescription;
         
-        // Ensure UI is visible
         const techStackContainer = document.getElementById('tech-stack');
         if (techStackContainer) {
             techStackContainer.style.display = 'block';
@@ -1826,7 +1823,6 @@ function showProjectModal(project) {
         }
         document.getElementById('project-links').style.opacity = '1';
 
-        // Tech Stack
         techTags.innerHTML = '';
         project.techStack.forEach(tech => {
             const tag = document.createElement('span');
@@ -1840,9 +1836,10 @@ function showProjectModal(project) {
             techTags.appendChild(tag);
         });
 
+        // Apply Classes: Live -> Pink, Source -> Cyan
         projectLinks.innerHTML = `
-            <a href="${project.liveUrl}" class="btn btn-primary" target="_blank">${t('viewLive')}</a>
-            <a href="${project.sourceUrl}" class="btn btn-secondary" target="_blank">${t('sourceCode')}</a>
+            <a href="${project.liveUrl}" class="btn btn-pink" target="_blank">${t('viewLive')}</a>
+            <a href="${project.sourceUrl}" class="btn btn-cyan" target="_blank">${t('sourceCode')}</a>
         `;
 
         modalOverlay.classList.remove('hidden');
@@ -1866,14 +1863,11 @@ function refreshModalContent() {
 function showContactModal() {
     currentProjectId = null;
     
-    const titleText = "CONTACT / LINKS";
-    const contactText = "Connect with me on LinkedIn, check out my GitHub repositories, or send me an email to get in touch!";
-    
-    // Localize for Desktop (Legacy)
-    const titleStr = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
+    // Localize Data
+    const title = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
     const descData = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
-    const dialogueChunks = Array.isArray(descData) ? descData : [descData];
-
+    const descText = Array.isArray(descData) ? descData.join(' ') : descData;
+    
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
@@ -1881,21 +1875,69 @@ function showContactModal() {
         const mobilePanel = document.getElementById('mobile-project-panel');
         
         // Set Title
-        document.getElementById('mobile-title').textContent = titleText;
+        document.getElementById('mobile-title').textContent = title;
         
         // Type Description
-        typeMobileText(contactText, 'mobile-desc');
+        typeMobileText(descText, 'mobile-desc');
 
-        // HIDE Project-Specific Elements
+        // HIDE Tech Stack
         document.getElementById('mobile-tech-stack').style.display = 'none';
-        document.querySelector('.mobile-actions').style.display = 'none';
+        
+        // SHOW Actions and Populate
+        const actionsContainer = document.querySelector('.mobile-actions');
+        actionsContainer.style.display = 'flex';
+        actionsContainer.style.flexDirection = 'column'; // Vertical Stack for Rows
+        actionsContainer.style.gap = '15px';
+        actionsContainer.innerHTML = '';
+        
+        // Row 1: Socials (Cyan)
+        const socialRow = document.createElement('div');
+        socialRow.style.display = 'flex';
+        socialRow.style.gap = '10px';
+        socialRow.style.justifyContent = 'center';
+
+        // Row 2: Email (Pink)
+        const emailRow = document.createElement('div');
+        emailRow.style.display = 'flex';
+        emailRow.style.justifyContent = 'center';
+
+        CONTACT_INFO.links.forEach(link => {
+            const btn = document.createElement('a');
+            
+            if (link.type === 'email') {
+                btn.className = 'btn btn-pink'; // Pink for Email
+                btn.href = '#';
+                btn.innerHTML = `${link.icon} ${link.email} <i class="fas fa-copy" style="margin-left:5px"></i>`;
+                btn.style.width = '100%';
+                btn.style.textAlign = 'center';
+                
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(link.email).then(() => {
+                        const originalHTML = btn.innerHTML;
+                        btn.innerHTML = `<i class="fas fa-check"></i> ${t('copied')}`;
+                        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+                    });
+                };
+                emailRow.appendChild(btn);
+            } else {
+                btn.className = 'btn btn-cyan'; // Cyan for Socials
+                btn.target = '_blank';
+                btn.innerHTML = `${link.icon} ${link.label}`;
+                btn.href = link.url;
+                socialRow.appendChild(btn);
+            }
+        });
+
+        actionsContainer.appendChild(socialRow);
+        actionsContainer.appendChild(emailRow);
+
 
         // SHOW PANEL
         mobilePanel.classList.remove('hidden');
         mobilePanel.classList.add('active');
         hudOpen = true;
         
-        // Ensure overlay hidden
         modalOverlay.classList.add('hidden');
         projectModal.classList.remove('active');
 
@@ -1906,51 +1948,65 @@ function showContactModal() {
     } else {
         // --- DESKTOP: OVERLAY MODAL ---
         
-        projectTitle.textContent = titleStr;
+        projectTitle.textContent = title;
+        
         clearInterval(typeInterval);
         isTyping = false;
-        projectDescription.innerHTML = dialogueChunks.join(' ');
+        projectDescription.innerHTML = descText;
         
         const techStackContainer = document.getElementById('tech-stack');
         if (techStackContainer) techStackContainer.style.display = 'none';
         document.getElementById('project-links').style.opacity = '1';
 
         projectLinks.innerHTML = '';
-        const container = document.createElement('div');
-        container.style.display = 'flex';
-        container.style.gap = '10px';
-        container.style.justifyContent = 'center';
+        
+        // 1. Social Row (GitHub, LinkedIn) - Cyan
+        const socialRow = document.createElement('div');
+        socialRow.style.display = 'flex';
+        socialRow.style.gap = '15px';
+        socialRow.style.justifyContent = 'center';
+        socialRow.style.marginBottom = '10px';
 
-        const emailGroup = document.createElement('div');
-        emailGroup.className = 'email-group';
-        
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-primary';
-        btn.innerHTML = `<i class="fas fa-envelope"></i> ${CONTACT_INFO.email} <i class="fas fa-copy"></i>`;
-        
-        btn.addEventListener('click', () => {
-             navigator.clipboard.writeText(CONTACT_INFO.email).then(() => {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = `<i class="fas fa-check"></i> ${t('copied')}`;
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
+        // 2. Email Row (Email) - Pink
+        const emailRow = document.createElement('div');
+        emailRow.style.display = 'flex';
+        emailRow.style.justifyContent = 'center';
+
+        CONTACT_INFO.links.forEach(link => {
+            const btn = document.createElement('a');
+            
+            if (link.type === 'email') {
+                btn.className = 'btn btn-pink'; // Pink
+                btn.href = '#';
+                btn.innerHTML = `${link.icon} ${link.email} <i class="fas fa-copy" style="margin-left:5px"></i>`;
+                btn.style.minWidth = '250px'; 
+                btn.style.textAlign = 'center';
+                
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(link.email).then(() => {
+                        const originalHTML = btn.innerHTML;
+                        btn.innerHTML = `<i class="fas fa-check"></i> ${t('copied')}`;
+                        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+                    });
+                };
+                emailRow.appendChild(btn);
+            } else {
+                btn.className = 'btn btn-cyan'; // Cyan
+                btn.target = '_blank';
+                btn.innerHTML = `${link.icon} ${link.label}`;
+                btn.href = link.url;
+                socialRow.appendChild(btn);
+            }
         });
 
-        emailGroup.appendChild(btn);
-        container.appendChild(emailGroup);
-        
-        const linkedInBtn = document.createElement('a');
-        linkedInBtn.href = CONTACT_INFO.linkedin;
-        linkedInBtn.className = 'btn btn-secondary';
-        linkedInBtn.target = '_blank';
-        linkedInBtn.innerHTML = `<i class="fab fa-linkedin"></i> LinkedIn`;
-        container.appendChild(linkedInBtn);
+        const mainContainer = document.createElement('div');
+        mainContainer.style.display = 'flex';
+        mainContainer.style.flexDirection = 'column';
+        mainContainer.appendChild(socialRow);
+        mainContainer.appendChild(emailRow);
 
-        projectLinks.appendChild(container);
+        projectLinks.appendChild(mainContainer);
 
         modalOverlay.classList.remove('hidden');
         projectModal.classList.add('active');
