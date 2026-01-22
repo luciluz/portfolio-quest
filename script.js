@@ -1828,13 +1828,15 @@ function showProjectModal(project) {
 
     // Load full text
     dialogueChunks = Array.isArray(descData) ? descData : [descData];
-    const fullDescription = dialogueChunks.join(' ');
+    const fullDescription = dialogueChunks.join('<br>');
 
     // HYBRID SYSTEM
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
+        // ==========================================
         // --- MOBILE: EXTERNAL PANEL ---
+        // ==========================================
         const mobilePanel = document.getElementById('mobile-project-panel');
 
         // Populate Title
@@ -1843,49 +1845,60 @@ function showProjectModal(project) {
         // Populate Description with RPG Typewriter
         typeMobileText(fullDescription, 'mobile-desc');
 
-        // Tech Stack
+        // --- SAFE TECH STACK RENDER (Fix Crash) ---
         const mobileTechTags = document.getElementById('mobile-tech-stack');
         mobileTechTags.innerHTML = '';
-        project.techStack.forEach(tech => {
-            const tag = document.createElement('span');
-            tag.className = 'tech-tag';
-            tag.textContent = tech;
-            mobileTechTags.appendChild(tag);
-        });
+
+        // Solo intentamos dibujar si techStack existe y tiene cosas inside
+        if (project.techStack && Array.isArray(project.techStack) && project.techStack.length > 0) {
+            mobileTechTags.style.display = 'flex';
+            project.techStack.forEach(tech => {
+                const tag = document.createElement('span');
+                tag.className = 'tech-tag';
+                tag.textContent = tech;
+                mobileTechTags.appendChild(tag);
+            });
+        } else {
+            mobileTechTags.style.display = 'none'; // Ocultar si está vacío (Bio/Exp)
+        }
 
         // --- UPDATE ACTIONS (Dynamic Rebuild) ---
         const actionsContainer = document.querySelector('.mobile-actions');
-        actionsContainer.innerHTML = ''; // Clear Contact Buttons if present
+        actionsContainer.innerHTML = '';
 
-        // Reset Style (in case Contact changed it)
+        // Reset Style
         actionsContainer.style.display = 'flex';
-        actionsContainer.style.flexDirection = 'row'; // Row for Project Buttons
+        actionsContainer.style.flexDirection = 'row';
         actionsContainer.style.gap = '10px';
         actionsContainer.style.flexWrap = 'wrap';
         actionsContainer.style.justifyContent = 'center';
 
-        // 1. Live Button (Pink)
-        const liveBtn = document.createElement('a');
-        liveBtn.className = 'btn btn-pink';
-        liveBtn.href = project.liveUrl;
-        liveBtn.target = '_blank';
-        liveBtn.innerHTML = t('viewLive');
-        liveBtn.style.flex = '1';
+        // 1. Live Button (Solo si existe URL)
+        if (project.liveUrl && project.liveUrl !== '#') {
+            const liveBtn = document.createElement('a');
+            liveBtn.className = 'btn btn-pink';
+            liveBtn.href = project.liveUrl;
+            liveBtn.target = '_blank';
+            liveBtn.innerHTML = t('viewLive');
+            liveBtn.style.flex = '1';
+            actionsContainer.appendChild(liveBtn);
+        }
 
-        // 2. Source Button (Cyan)
-        const sourceBtn = document.createElement('a');
-        sourceBtn.className = 'btn btn-cyan';
-        sourceBtn.href = project.sourceUrl;
-        sourceBtn.target = '_blank';
-        sourceBtn.innerHTML = t('sourceCode');
-        sourceBtn.style.flex = '1';
+        // 2. Source Button (Solo si existe URL)
+        if (project.sourceUrl && project.sourceUrl !== '#') {
+            const sourceBtn = document.createElement('a');
+            sourceBtn.className = 'btn btn-cyan';
+            sourceBtn.href = project.sourceUrl;
+            sourceBtn.target = '_blank';
+            sourceBtn.innerHTML = t('sourceCode');
+            sourceBtn.style.flex = '1';
+            actionsContainer.appendChild(sourceBtn);
+        }
 
-        actionsContainer.appendChild(liveBtn);
-        actionsContainer.appendChild(sourceBtn);
-
-        // Ensure visibility
-        document.getElementById('mobile-tech-stack').style.display = 'flex';
-        actionsContainer.style.display = 'flex';
+        // Si no se agregó ningún botón (caso Bio), ocultamos el contenedor de acciones
+        if (actionsContainer.children.length === 0) {
+            actionsContainer.style.display = 'none';
+        }
 
         // VISIBILITY
         mobilePanel.classList.remove('hidden');
@@ -1900,38 +1913,78 @@ function showProjectModal(project) {
         }, 100);
 
     } else {
+        // ==========================================
         // --- DESKTOP: OVERLAY MODAL ---
+        // ==========================================
         projectTitle.textContent = title;
 
         clearInterval(typeInterval);
         isTyping = false;
         projectDescription.innerHTML = fullDescription;
 
+        // --- SAFE TECH STACK RENDER (Fix Crash) ---
         const techStackContainer = document.getElementById('tech-stack');
+        const techTags = document.getElementById('tech-tags'); // Asegúrate que este ID exista en tu HTML
+
         if (techStackContainer) {
-            techStackContainer.style.display = 'block';
-            techStackContainer.style.opacity = '1';
+            if (project.techStack && Array.isArray(project.techStack) && project.techStack.length > 0) {
+                techStackContainer.style.display = 'block';
+                techStackContainer.style.opacity = '1';
+                techTags.innerHTML = ''; // Limpiar anteriores
+
+                project.techStack.forEach(tech => {
+                    const tag = document.createElement('span');
+                    tag.className = 'tech-tag';
+                    tag.textContent = tech;
+                    tag.addEventListener('mouseenter', () => {
+                        player.isCoding = true;
+                        soundManager.playTypingSound();
+                    });
+                    tag.addEventListener('mouseleave', () => player.isCoding = false);
+                    techTags.appendChild(tag);
+                });
+            } else {
+                // Si es Bio o Experiencia (sin tech), ocultamos la sección
+                techStackContainer.style.display = 'none';
+            }
         }
-        document.getElementById('project-links').style.opacity = '1';
 
-        techTags.innerHTML = '';
-        project.techStack.forEach(tech => {
-            const tag = document.createElement('span');
-            tag.className = 'tech-tag';
-            tag.textContent = tech;
-            tag.addEventListener('mouseenter', () => {
-                player.isCoding = true;
-                soundManager.playTypingSound();
-            });
-            tag.addEventListener('mouseleave', () => player.isCoding = false);
-            techTags.appendChild(tag);
-        });
+        // --- SAFE LINKS RENDER ---
+        const linksContainer = document.getElementById('project-links');
+        linksContainer.style.opacity = '1';
+        linksContainer.innerHTML = ''; // Limpiar botones anteriores
 
-        // Apply Classes: Live -> Pink, Source -> Cyan
-        projectLinks.innerHTML = `
-            <a href="${project.liveUrl}" class="btn btn-pink" target="_blank">${t('viewLive')}</a>
-            <a href="${project.sourceUrl}" class="btn btn-cyan" target="_blank">${t('sourceCode')}</a>
-        `;
+        let hasLinks = false;
+
+        // Botón Live
+        if (project.liveUrl && project.liveUrl !== '#') {
+            const btn = document.createElement('a');
+            btn.href = project.liveUrl;
+            btn.className = 'btn btn-pink';
+            btn.target = '_blank';
+            btn.innerText = t('viewLive');
+            linksContainer.appendChild(btn);
+            hasLinks = true;
+        }
+
+        // Botón Source
+        if (project.sourceUrl && project.sourceUrl !== '#') {
+            const btn = document.createElement('a');
+            btn.href = project.sourceUrl;
+            btn.className = 'btn btn-cyan';
+            btn.target = '_blank';
+            btn.innerText = t('sourceCode');
+            linksContainer.appendChild(btn);
+            hasLinks = true;
+        }
+
+        // Si no hay links, ocultamos el contenedor para que no ocupe espacio
+        if (!hasLinks) {
+            linksContainer.style.display = 'none';
+        } else {
+            linksContainer.style.display = 'flex'; // O 'block' según tu CSS
+            linksContainer.style.gap = '10px';     // Añadir espacio si usas flex
+        }
 
         modalOverlay.classList.remove('hidden');
         projectModal.classList.add('active');
@@ -2411,12 +2464,12 @@ function drawMeDoor() {
 
     // Text ME
     ctx.fillStyle = '#e94560'; // Pink
-    ctx.font = `bold ${12 * scale}px 'Press Start 2P'`;
+    ctx.font = `bold ${20 * scale}px 'Press Start 2P'`;
     ctx.textAlign = 'center';
 
     // Floating effect
     const floatY = Math.sin(Date.now() / 300) * 5 * scale;
-    ctx.fillText("ME", meDoor.x + meDoor.w / 2, meDoor.y - 15 * scale + floatY);
+    ctx.fillText("ME", meDoor.x + meDoor.w / 2, meDoor.y - 25 * scale + floatY);
 
     ctx.restore();
 }
@@ -2451,7 +2504,7 @@ function gameLoop() {
             ctx.fillStyle = "white";
             ctx.font = `10px 'Press Start 2P'`;
             ctx.textAlign = 'center';
-            ctx.fillText("Press UP", meDoor.x + meDoor.w / 2, meDoor.y - 35 * scale);
+            ctx.fillText("Press UP", meDoor.x + meDoor.w / 2, meDoor.y - 50 * scale);
             ctx.restore();
 
             if (keys.jump && !hudOpen) { // keys.jump is usually UP/W/Space

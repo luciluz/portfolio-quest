@@ -44,9 +44,29 @@ const ME_CONTENT = {
         id: 'experience',
         title: { en: "Experience", es: "Experiencia" },
         description: {
-            en: ["Freelance Developer at TerraStudio.", "University Teaching Assistant (Ayudante de Segunda) at UBA."],
-            es: ["Desarrollador Freelance en TerraStudio.", "Ayudante de Segunda (Docente) en la UBA."]
+            // VERSIÓN INGLÉS
+            en: [
+                "<strong>2026 - Present | TerraStudio</strong>",
+                "SOFTWARE ENGINEER & DATA ANALYST",
+                "Leading digital transformation and Full Stack developer.",
+                " ",
+                "<strong>2024 - Present | UBA</strong>",
+                "UNIVERSITY TEACHING ASSISTANT",
+                "Algorithm Design Techniques"
+            ],
+
+            // VERSIÓN ESPAÑOL
+            es: [
+                "2026 - Presente | TerraStudio",
+                "INGENIERO DE SOFTWARE & DATA ANALYST",
+                "Liderando la transformación digital y desarrollo Full Stack.",
+                " ",
+                "2024 - Presente | UBA",
+                "AYUDANTE DE CÁTEDRA",
+                "Técnicas de Diseño de Algoritmos"
+            ]
         },
+        // Dejamos esto vacío o null para que nuestra función "inteligente" lo oculte y no crashee
         techStack: [],
         liveUrl: "#",
         sourceUrl: "#"
@@ -171,11 +191,12 @@ function updateMeRoom() {
     // Allow standing on top of the exit door
     const doorPlatform = { x: ROOM_WIDTH / 2 - 30, y: FLOOR_Y - 80, w: 60, h: 10 };
     const onDoorX = player.x + player.width > doorPlatform.x && player.x < doorPlatform.x + doorPlatform.w;
-    const aboveDoor = player.y + player.height <= doorPlatform.y + 10;
-    const fallingOnDoor = player.y + player.height >= doorPlatform.y && player.vy >= 0;
+    const falling = player.vy >= 0;
+    const feetPos = player.y + player.height;
+    const isLanding = feetPos >= doorPlatform.y && feetPos <= doorPlatform.y + 20;
 
-    if (onDoorX && aboveDoor && fallingOnDoor) {
-        player.y = doorPlatform.y - player.height;
+    if (onDoorX && falling && isLanding) {
+        player.y = doorPlatform.y - player.height; // Te pegamos a la superficie
         player.vy = 0;
         player.onGround = true;
     }
