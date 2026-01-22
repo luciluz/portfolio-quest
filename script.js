@@ -1726,66 +1726,129 @@ function typewriter(text, element, speed = 30) {
     }, speed);
 }
 
+
+// ============ MOBILE RPG TYPEWRITER ============
+let mobileTypingInterval;
+let isMobileTyping = false;
+
+function typeMobileText(text, elementId, speed = 20) {
+    clearInterval(mobileTypingInterval);
+    const target = document.getElementById(elementId);
+    if (!target) return;
+    
+    target.textContent = '';
+    isMobileTyping = true;
+    
+    let i = 0;
+    mobileTypingInterval = setInterval(() => {
+        target.textContent += text.charAt(i);
+        // Optional: Play blip every few chars
+        if (soundManager && i % 3 === 0) soundManager.playDialogBlip();
+        i++;
+        if (i >= text.length) {
+            clearInterval(mobileTypingInterval);
+            isMobileTyping = false;
+        }
+    }, speed);
+}
+
 function showProjectModal(project) {
     currentProjectId = project.id;
-    // Localize content based on currentLang with fallback
+    // Localize
     const title = project.title[currentLang] || project.title['en'] || project.title;
     const descData = project.description[currentLang] || project.description['en'] || project.description;
 
-    // Load chunks
+    // Load full text
     dialogueChunks = Array.isArray(descData) ? descData : [descData];
-    currentChunkIndex = 0;
-
-    projectTitle.textContent = title;
-
-    // HYBRID MODAL LOGIC
+    const fullDescription = dialogueChunks.join(' ');
+    
+    // HYBRID SYSTEM
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
-        // MOBILE: Typewriter Effect
-        typewriter(dialogueChunks[0], projectDescription);
+        // --- MOBILE: EXTERNAL PANEL ---
+        const mobilePanel = document.getElementById('mobile-project-panel');
+        
+        // Populate Title
+        document.getElementById('mobile-title').textContent = title;
+        
+        // Populate Description with RPG Typewriter
+        typeMobileText(fullDescription, 'mobile-desc');
+        
+        // Tech Stack
+        const mobileTechTags = document.getElementById('mobile-tech-stack');
+        mobileTechTags.innerHTML = '';
+        project.techStack.forEach(tech => {
+            const tag = document.createElement('span');
+            tag.className = 'tech-tag';
+            tag.textContent = tech;
+            mobileTechTags.appendChild(tag);
+        });
+
+        // Actions
+        const liveBtn = document.getElementById('mobile-live-btn');
+        const sourceBtn = document.getElementById('mobile-source-btn');
+        liveBtn.href = project.liveUrl;
+        sourceBtn.href = project.sourceUrl;
+        
+        // Ensure visibility (reset from Contact mode)
+        document.getElementById('mobile-tech-stack').style.display = 'flex';
+        document.querySelector('.mobile-actions').style.display = 'flex';
+
+        // VISIBILITY
+        mobilePanel.classList.remove('hidden');
+        mobilePanel.classList.add('active');
+        hudOpen = true;
+        
+        // Ensure overlay is hidden
+        modalOverlay.classList.add('hidden');
+        projectModal.classList.remove('active');
+
+        // SCROLL
+        setTimeout(() => {
+            mobilePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
     } else {
-        // DESKTOP: Instant Render
+        // --- DESKTOP: OVERLAY MODAL ---
+        projectTitle.textContent = title;
+
+        // Instant Render
         clearInterval(typeInterval);
         isTyping = false;
-        projectDescription.innerHTML = dialogueChunks.join(' ');
-
-        // Ensure UI is visible immediately
+        projectDescription.innerHTML = fullDescription;
+        
+        // Ensure UI is visible
         const techStackContainer = document.getElementById('tech-stack');
         if (techStackContainer) {
             techStackContainer.style.display = 'block';
             techStackContainer.style.opacity = '1';
         }
         document.getElementById('project-links').style.opacity = '1';
-    }
 
-    // Ensure Tech Stack section is visible for projects
-    const techStackContainer = document.getElementById('tech-stack');
-    if (techStackContainer) techStackContainer.style.display = 'block';
-
-    techTags.innerHTML = '';
-    project.techStack.forEach(tech => {
-        const tag = document.createElement('span');
-        tag.className = 'tech-tag';
-        tag.textContent = tech;
-        tag.addEventListener('mouseenter', () => {
-            // Hacker Mode Interaction
-            player.isCoding = true;
-            soundManager.playTypingSound();
+        // Tech Stack
+        techTags.innerHTML = '';
+        project.techStack.forEach(tech => {
+            const tag = document.createElement('span');
+            tag.className = 'tech-tag';
+            tag.textContent = tech;
+            tag.addEventListener('mouseenter', () => {
+                player.isCoding = true;
+                soundManager.playTypingSound();
+            });
+            tag.addEventListener('mouseleave', () => player.isCoding = false);
+            techTags.appendChild(tag);
         });
-        tag.addEventListener('mouseleave', () => player.isCoding = false);
-        techTags.appendChild(tag);
-    });
 
+        projectLinks.innerHTML = `
+            <a href="${project.liveUrl}" class="btn btn-primary" target="_blank">${t('viewLive')}</a>
+            <a href="${project.sourceUrl}" class="btn btn-secondary" target="_blank">${t('sourceCode')}</a>
+        `;
 
-    projectLinks.innerHTML = `
-        <a href="${project.liveUrl}" class="btn btn-primary" target="_blank">${t('viewLive')}</a>
-        <a href="${project.sourceUrl}" class="btn btn-secondary" target="_blank">${t('sourceCode')}</a>
-    `;
-
-    modalOverlay.classList.remove('hidden');
-    projectModal.classList.add('active');
-    hudOpen = true;
+        modalOverlay.classList.remove('hidden');
+        projectModal.classList.add('active');
+        hudOpen = true;
+    }
 }
 
 function refreshModalContent() {
@@ -1801,116 +1864,74 @@ function refreshModalContent() {
 }
 
 function showContactModal() {
-    currentProjectId = null; // Clear project ID so refresh logic knows it's contact modal
-
-    // Localize Title and Description
-    const title = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
+    currentProjectId = null;
+    
+    const titleText = "CONTACT / LINKS";
+    const contactText = "Connect with me on LinkedIn, check out my GitHub repositories, or send me an email to get in touch!";
+    
+    // Localize for Desktop (Legacy)
+    const titleStr = CONTACT_INFO.title[currentLang] || CONTACT_INFO.title['en'];
     const descData = CONTACT_INFO.description[currentLang] || CONTACT_INFO.description['en'];
+    const dialogueChunks = Array.isArray(descData) ? descData : [descData];
 
-    // Load chunks
-    dialogueChunks = Array.isArray(descData) ? descData : [descData];
-    currentChunkIndex = 0;
-
-    projectTitle.textContent = title;
-
-    // HYBRID MODAL LOGIC
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
-        // MOBILE: Typewriter Effect
-        // ensure UI is hidden initially for reveal
-        const ts = document.getElementById('tech-stack');
-        if (ts) ts.style.opacity = '0';
-        document.getElementById('project-links').style.opacity = '0';
+        // --- MOBILE: CONTACT PANEL ---
+        const mobilePanel = document.getElementById('mobile-project-panel');
+        
+        // Set Title
+        document.getElementById('mobile-title').textContent = titleText;
+        
+        // Type Description
+        typeMobileText(contactText, 'mobile-desc');
 
-        typewriter(dialogueChunks[0], projectDescription);
+        // HIDE Project-Specific Elements
+        document.getElementById('mobile-tech-stack').style.display = 'none';
+        document.querySelector('.mobile-actions').style.display = 'none';
+
+        // SHOW PANEL
+        mobilePanel.classList.remove('hidden');
+        mobilePanel.classList.add('active');
+        hudOpen = true;
+        
+        // Ensure overlay hidden
+        modalOverlay.classList.add('hidden');
+        projectModal.classList.remove('active');
+
+        setTimeout(() => {
+            mobilePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
     } else {
-        // DESKTOP: Instant Render
-        clearInterval(typeInterval); // Check safety
+        // --- DESKTOP: OVERLAY MODAL ---
+        
+        projectTitle.textContent = titleStr;
+        clearInterval(typeInterval);
         isTyping = false;
         projectDescription.innerHTML = dialogueChunks.join(' ');
-
-        // Ensure UI is visible immediately
-        const ts = document.getElementById('tech-stack');
-        if (ts) {
-            ts.style.display = 'block';
-            ts.style.opacity = '1';
-        }
+        
+        const techStackContainer = document.getElementById('tech-stack');
+        if (techStackContainer) techStackContainer.style.display = 'none';
         document.getElementById('project-links').style.opacity = '1';
-    }
 
-    // Hide Tech Stack section for contact modal
-    const techStackContainer = document.getElementById('tech-stack');
-    if (techStackContainer) techStackContainer.style.display = 'none';
+        projectLinks.innerHTML = '';
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+        container.style.justifyContent = 'center';
 
-    techTags.innerHTML = '';
-
-    // Create contact links
-    projectLinks.innerHTML = '';
-
-    // Create container for grouped links
-    const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.gap = '15px';
-    container.style.width = '100%';
-
-    // Group 1: Socials (GitHub, LinkedIn)
-    const socialGroup = document.createElement('div');
-    socialGroup.className = 'social-group';
-    socialGroup.style.display = 'flex';
-    socialGroup.style.gap = '10px';
-    socialGroup.style.justifyContent = 'center';
-
-    // GitHub
-    const githubLink = CONTACT_INFO.links.find(l => l.label === 'GitHub');
-    if (githubLink) {
-        const btn = document.createElement('a');
-        btn.href = githubLink.url;
-        btn.target = '_blank';
-        btn.className = 'btn btn-secondary'; // Secondary style for socials
-        btn.innerHTML = `<i class="fab fa-github"></i> GitHub`;
-        socialGroup.appendChild(btn);
-    }
-
-    // LinkedIn
-    const linkedinLink = CONTACT_INFO.links.find(l => l.label === 'LinkedIn');
-    if (linkedinLink) {
-        const btn = document.createElement('a');
-        btn.href = linkedinLink.url;
-        btn.target = '_blank';
-        btn.className = 'btn btn-secondary';
-        btn.innerHTML = `<i class="fab fa-linkedin"></i> LinkedIn`;
-        socialGroup.appendChild(btn);
-    }
-
-    container.appendChild(socialGroup);
-
-    // Group 2: Email
-    const emailLink = CONTACT_INFO.links.find(l => l.label === 'Email');
-    if (emailLink) {
         const emailGroup = document.createElement('div');
         emailGroup.className = 'email-group';
-        emailGroup.style.textAlign = 'center';
-
-        const btn = document.createElement('a');
-        btn.href = '#'; // Prevent default navigation
-        btn.className = 'btn btn-primary'; // Primary style for direct contact
-        btn.style.cursor = 'pointer'; // Ensure pointer cursor
-        // Show full email address with copy icon
-        const originalText = `<i class="fas fa-envelope"></i> ${emailLink.email} <i class="fas fa-copy" style="margin-left: 10px; opacity: 0.7;"></i>`;
-        btn.innerHTML = originalText;
-
-        // Clipboard Feature
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const email = emailLink.email;
-            navigator.clipboard.writeText(email).then(() => {
-                // Visual feedback
-                const copiedText = currentLang === 'en' ? "✔ Copied!" : "✔ ¡Copiado!";
-                btn.innerHTML = copiedText;
-
-                // Revert after 2 seconds
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.innerHTML = `<i class="fas fa-envelope"></i> ${CONTACT_INFO.email} <i class="fas fa-copy"></i>`;
+        
+        btn.addEventListener('click', () => {
+             navigator.clipboard.writeText(CONTACT_INFO.email).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<i class="fas fa-check"></i> ${t('copied')}`;
                 setTimeout(() => {
                     btn.innerHTML = originalText;
                 }, 2000);
@@ -1921,18 +1942,44 @@ function showContactModal() {
 
         emailGroup.appendChild(btn);
         container.appendChild(emailGroup);
+        
+        const linkedInBtn = document.createElement('a');
+        linkedInBtn.href = CONTACT_INFO.linkedin;
+        linkedInBtn.className = 'btn btn-secondary';
+        linkedInBtn.target = '_blank';
+        linkedInBtn.innerHTML = `<i class="fab fa-linkedin"></i> LinkedIn`;
+        container.appendChild(linkedInBtn);
+
+        projectLinks.appendChild(container);
+
+        modalOverlay.classList.remove('hidden');
+        projectModal.classList.add('active');
+        hudOpen = true;
     }
-
-    projectLinks.appendChild(container);
-
-    modalOverlay.classList.remove('hidden');
-    projectModal.classList.add('active');
-    hudOpen = true;
 }
 
 function hideProjectModal() {
+    // Hide Overlay (Desktop)
     modalOverlay.classList.add('hidden');
     projectModal.classList.remove('active');
+    
+    // Hide External Panel (Mobile)
+    const mobilePanel = document.getElementById('mobile-project-panel');
+    if (mobilePanel) {
+        mobilePanel.classList.remove('active');
+        mobilePanel.classList.add('hidden');
+    }
+    
+    // Cleanup Mobile Typewriter
+    clearInterval(mobileTypingInterval);
+    isMobileTyping = false;
+    
+    // Reset Mobile Panel State for next open
+    const mobileTechStack = document.getElementById('mobile-tech-stack');
+    if (mobileTechStack) mobileTechStack.style.display = 'flex';
+    const mobileActions = document.querySelector('.mobile-actions');
+    if (mobileActions) mobileActions.style.display = 'flex';
+
     hudOpen = false;
     clearInterval(typeInterval);
     isTyping = false;
