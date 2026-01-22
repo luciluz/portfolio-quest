@@ -237,27 +237,37 @@ function updateMeRoom() {
         block.update();
     });
 
-    // --- EXIT DOOR LOGIC ---
+    // --- EXIT DOOR LOGIC (FIXED) ---
     const exitDoorLogical = {
         x: ROOM_WIDTH / 2 - 30, // Center
-        y: FLOOR_Y - 80,        // Above floor
+        y: FLOOR_Y - 90,        // <--- Lo subimos un poco para envolver al jugador
         w: 60,
-        h: 80
+        h: 90
     };
 
+    // Check collision logic
     const touchingDoor = player.x < exitDoorLogical.x + exitDoorLogical.w &&
         player.x + player.width > exitDoorLogical.x &&
         player.y < exitDoorLogical.y + exitDoorLogical.h &&
         player.y + player.height > exitDoorLogical.y;
 
-    if (touchingDoor && keys.up && !hudOpen) {
-        // Exit to Main Level
+    // FIX CRÍTICO: Usamos 'keys.jump' en lugar de 'keys.up'
+    // 'keys.jump' suele ser la variable que agrupa (Espacio, W, Flecha Arriba)
+    // Si tu juego no usa 'keys.jump', prueba con (keys.up || keys.w || keys.space)
+    if (touchingDoor && (keys.jump || keys.up) && !hudOpen) {
+
+        // 1. Cambiar estado
         gameState = 'MAIN';
-        // Respawn player at ME Door position in Main Level
-        player.x = 580; // ME Door X
+
+        // 2. Spawn Seguro (A la izquierda de la puerta exterior)
+        player.x = 500;
         player.y = 400;
         player.vx = 0;
         player.vy = 0;
+
+        // 3. Resetear teclas para evitar saltos fantasma
+        keys.jump = false;
+        keys.up = false;
     }
 }
 

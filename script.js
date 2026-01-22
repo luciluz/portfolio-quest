@@ -2457,6 +2457,9 @@ function gameLoop() {
             if (keys.jump && !hudOpen) { // keys.jump is usually UP/W/Space
                 gameState = 'ME_ROOM';
                 setupMeRoom();
+                player.x = 500;
+                player.y = 380;
+                keys.jump = false;
             }
         }
 
