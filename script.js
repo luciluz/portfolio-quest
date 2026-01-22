@@ -330,6 +330,14 @@ class SoundManager {
         setTimeout(() => this.createBeep(850, 0.03, 'square', 0.1), 160);
     }
 
+    playTypingSound() {
+        if (!this.audioContext) this.init();
+        // Short mechanical keyboard burst
+        this.createBeep(1200, 0.02, 'square', 0.05);
+        setTimeout(() => this.createBeep(1100, 0.02, 'square', 0.05), 50);
+        setTimeout(() => this.createBeep(1300, 0.02, 'square', 0.05), 100);
+    }
+
     playBGM() {
         // Disabled by user request
         return;
@@ -1030,6 +1038,8 @@ class Player {
         this.sprite = createPlayerSprite();
         this.forcedState = null;
         this.forcedState = null;
+        this.forcedState = null;
+        this.isCoding = false; // Hacker Mode State
         this.lastTime = performance.now();
         this.prevY = y;  // Track previous Y position for one-way platforms
     }
@@ -1245,6 +1255,48 @@ class Player {
         // Right leg
         ctx.fillRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
         ctx.strokeRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
+
+        // ============ HACKER MODE OVERLAY (Simple) ============
+        if (this.isCoding) {
+            // Screen Glow (Reflection on body)
+            // Flicker between cyan and green to simulate active terminal
+            const flicker = Math.floor(performance.now() / 100) % 2 === 0;
+            ctx.fillStyle = flicker ? 'rgba(0, 255, 255, 0.2)' : 'rgba(0, 255, 0, 0.2)';
+            ctx.beginPath();
+            ctx.roundRect(x + 4 * scale, y + 20 * scale, w - 8 * scale, h - 28 * scale, 6 * scale);
+            ctx.fill();
+
+            // Sunglasses (Black rects over eyes)
+            ctx.fillStyle = '#111';
+            // Left Lens
+            ctx.beginPath();
+            ctx.roundRect(x + w * 0.25, y + 8 * scale, 12 * scale, 8 * scale, 2 * scale);
+            ctx.fill();
+            // Right Lens
+            ctx.beginPath();
+            ctx.roundRect(x + w * 0.55, y + 8 * scale, 12 * scale, 8 * scale, 2 * scale);
+            ctx.fill();
+            // Bridge
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.45, y + 10 * scale);
+            ctx.lineTo(x + w * 0.55, y + 10 * scale);
+            ctx.stroke();
+
+            // Laptop (Moved UP: Chest level)
+            ctx.fillStyle = '#333'; // Dark Gray Case
+            // Position: y + h - 25 (Higher up)
+            ctx.fillRect(x + w * 0.1, y + h - 25 * scale, w * 0.8, 12 * scale);
+
+            // Laptop Logo (Apple-ish style)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x + w * 0.5, y + h - 19 * scale, 2.5 * scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Optional: Matrix Rain Effect around player? (Maybe too much, keeping it simple as requested)
+        }
 
         ctx.restore();
     }
@@ -1543,10 +1595,11 @@ function showProjectModal(project) {
         tag.className = 'tech-tag';
         tag.textContent = tech;
         tag.addEventListener('mouseenter', () => {
-            player.setForcedState(PlayerState.SHOCKED);
-            soundManager.playShocked();
+            // Hacker Mode Interaction
+            player.isCoding = true;
+            soundManager.playTypingSound();
         });
-        tag.addEventListener('mouseleave', () => player.clearForcedState());
+        tag.addEventListener('mouseleave', () => player.isCoding = false);
         techTags.appendChild(tag);
     });
 
