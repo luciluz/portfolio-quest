@@ -115,6 +115,12 @@ function updateMeRoom() {
     const FLOOR_Y = 460; // Logical floor Y (player stands on this)
     const ROOM_WIDTH = CONFIG.CANVAS_WIDTH; // 900
 
+    // --- [NUEVO] ACTIVITY CHECK ---
+    // Esto es lo que faltaba. Si te mueves, reseteamos el reloj para que no se duerma.
+    if (keys.left || keys.right || keys.jump || Math.abs(player.vx) > 0.1 || !player.onGround) {
+        player.lastActionTime = Date.now();
+    }
+
     // --- PLAYER MOVEMENT (Using CONFIG values) ---
     if (keys.right) {
         player.vx = CONFIG.PLAYER_SPEED;

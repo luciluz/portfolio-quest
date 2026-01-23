@@ -39,6 +39,7 @@ const TRANSLATIONS = {
         techStackLabel: 'Tech Stack',
         hudLabel: 'Project Info',
         emailTooltip: 'luciruzvelos@gmail.com',
+        itsMe: "It's me!",
         footer: '© 2026 Luciano Ruz | HTML5 Canvas'
     },
     es: {
@@ -48,12 +49,13 @@ const TRANSLATIONS = {
         neonSign: 'PROYECTOS',
         contactLabel: 'CONTACTO',
         contactTitle: '¡Conectemos!',
-        contactDesc: '¡No dudes en contactarme! Siempre estoy abierta a nuevas oportunidades.',
+        contactDesc: '¡No dudes en contactarme! Siempre estoy abierto a nuevas oportunidades.',
         viewLive: 'Ver Proyecto',
         sourceCode: 'Repositorio',
         techStackLabel: 'Tecnologías',
         hudLabel: 'Info del Proyecto',
         emailTooltip: 'luciruzvelos@gmail.com',
+        itsMe: "Soy yo!",
         footer: '© 2026 Luciano Ruz | HTML5 Canvas'
     }
 };
@@ -131,7 +133,8 @@ const PlayerState = {
     JUMP: 'JUMP',
     LOOK_UP: 'LOOK_UP',
     SHOCKED: 'SHOCKED',
-    CODING: 'CODING'
+    SLEEP: 'SLEEP',
+    HAPPY: 'HAPPY'
 };
 
 // ============ CONFIGURATION ============
@@ -142,6 +145,7 @@ const CONFIG = {
     PLAYER_SPEED: 5,
     JUMP_FORCE: -14,
     MAX_FALL_SPEED: 15,
+    SLEEP_DELAY: 3000,
 
     // Canvas
     CANVAS_WIDTH: 900,
@@ -270,7 +274,7 @@ class SoundManager {
     constructor() {
         this.audioContext = null;
         this.enabled = true;
-        this.muted = false;
+        this.muted = true;
         this.bgmPlaying = false;
         this.masterVolume = 0.3;
         this.initialized = false;
@@ -346,25 +350,8 @@ class SoundManager {
         this.createBeep(700, 0.08, 'sawtooth', 0.15);
     }
 
-    playCoding() {
-        if (!this.audioContext) this.init();
-        // Keyboard typing sounds
-        this.createBeep(800, 0.03, 'square', 0.1);
-        setTimeout(() => this.createBeep(900, 0.03, 'square', 0.1), 80);
-        setTimeout(() => this.createBeep(850, 0.03, 'square', 0.1), 160);
-    }
-
-    playTypingSound() {
-        if (!this.audioContext) this.init();
-        // Short mechanical keyboard burst
-        this.createBeep(1200, 0.02, 'square', 0.05);
-        setTimeout(() => this.createBeep(1100, 0.02, 'square', 0.05), 50);
-        setTimeout(() => this.createBeep(1300, 0.02, 'square', 0.05), 100);
-    }
-
     playDialogBlip() {
         if (!this.audioContext) this.init();
-        // Short high pitch blip for dialogue
         this.createBeep(1500 + Math.random() * 200, 0.03, 'triangle', 0.02);
     }
 
@@ -381,7 +368,6 @@ class SoundManager {
     playBGMLoop() {
         if (!this.bgmPlaying || !this.enabled || this.muted) return;
 
-        // Catchy 8-bit melody - upbeat and fun
         const melody = [
             { freq: 523, dur: 0.15 }, { freq: 659, dur: 0.15 }, { freq: 784, dur: 0.15 }, { freq: 659, dur: 0.15 },
             { freq: 523, dur: 0.15 }, { freq: 392, dur: 0.15 }, { freq: 523, dur: 0.3 }, { freq: 0, dur: 0.1 },
@@ -397,7 +383,6 @@ class SoundManager {
                 setTimeout(() => {
                     if (this.bgmPlaying && !this.muted) {
                         this.createBeep(note.freq, note.dur * 0.85, 'square', 0.08);
-                        // Add bass note
                         if (note.freq > 500) this.createBeep(note.freq / 2, note.dur * 0.5, 'triangle', 0.05);
                     }
                 }, time * 1000);
@@ -415,10 +400,16 @@ class SoundManager {
     }
 
     toggleMute() {
+        if (!this.audioContext) this.init();
+
         this.muted = !this.muted;
+
         if (this.muted) {
             this.stopBGM();
+        } else {
+            this.playBGM();
         }
+
         updateMuteButton();
         return this.muted;
     }
@@ -429,6 +420,20 @@ class SoundManager {
         } else {
             this.playBGM();
         }
+    }
+
+    playSnore() {
+        if (!this.audioContext) this.init();
+        if (this.muted || !this.enabled) return;
+        this.createBeep(80, 0.8, 'sawtooth', 0.05);
+        setTimeout(() => this.createBeep(70, 0.8, 'sawtooth', 0.05), 50);
+    }
+
+    playHappy() {
+        if (!this.audioContext) this.init();
+        // Dos notas agudas y rápidas
+        this.createBeep(880, 0.1, 'sine', 0.1);
+        setTimeout(() => this.createBeep(1100, 0.2, 'sine', 0.1), 100);
     }
 }
 
@@ -498,7 +503,8 @@ function createPlayerSprite() {
             [PlayerState.JUMP]: { frames: [0], frameDuration: 200, draw: drawPlayerJump },
             [PlayerState.LOOK_UP]: { frames: [0, 1], frameDuration: 300, draw: drawPlayerLookUp },
             [PlayerState.SHOCKED]: { frames: [0, 1], frameDuration: 100, draw: drawPlayerShocked },
-            [PlayerState.CODING]: { frames: [0, 1, 2, 1], frameDuration: 80, draw: drawPlayerCoding }
+            [PlayerState.HAPPY]: { frames: [0], frameDuration: 1000, draw: drawPlayerHappy },
+            [PlayerState.SLEEP]: { frames: [0, 1], frameDuration: 1000, draw: drawPlayerSleep }
         }
     });
 }
@@ -519,435 +525,296 @@ function calcEyeOffset(playerX, playerY, eyeCenterX, eyeCenterY, maxOffset, scal
     };
 }
 
-// Draw pirate base body (shirt/torso)
-function drawPirateBody(ctx, x, y, scale, shirtColor = '#c0392b') {
-    const w = 40 * scale;
+// ============ ROBOT DRAWING FUNCTIONS ============
 
-    // Torso/shirt
-    ctx.fillStyle = shirtColor;
-    ctx.strokeStyle = '#922b21';
-    ctx.lineWidth = 2 * scale;
-    ctx.beginPath();
-    ctx.roundRect(x + 6 * scale, y + 22 * scale, w - 12 * scale, 20 * scale, 4 * scale);
-    ctx.fill();
-    ctx.stroke();
-
-    // Belt
-    ctx.fillStyle = '#5d4e37';
-    ctx.fillRect(x + 6 * scale, y + 36 * scale, w - 12 * scale, 5 * scale);
-    ctx.fillStyle = '#ffd93d';  // Belt buckle
-    ctx.fillRect(x + 16 * scale, y + 36 * scale, 8 * scale, 5 * scale);
-}
-
-// Draw pirate head with hat
-function drawPirateHead(ctx, x, y, scale, yOffset = 0) {
-    const w = 40 * scale;
-
-    // Face (tan skin)
-    ctx.fillStyle = '#e8beac';
-    ctx.strokeStyle = '#c9a590';
-    ctx.lineWidth = 2 * scale;
-    ctx.beginPath();
-    ctx.roundRect(x + 8 * scale, y + 8 * scale - yOffset, w - 16 * scale, 18 * scale, 6 * scale);
-    ctx.fill();
-    ctx.stroke();
-
-    // Pirate hat - main part (black)
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.moveTo(x + 2 * scale, y + 12 * scale - yOffset);  // Left brim
-    ctx.lineTo(x + w - 2 * scale, y + 12 * scale - yOffset);  // Right brim
-    ctx.lineTo(x + w - 6 * scale, y + 2 * scale - yOffset);  // Right top
-    ctx.lineTo(x + w / 2, y - 4 * scale - yOffset);  // Peak
-    ctx.lineTo(x + 6 * scale, y + 2 * scale - yOffset);  // Left top
-    ctx.closePath();
-    ctx.fill();
-
-    // Hat brim
-    ctx.fillRect(x, y + 10 * scale - yOffset, w, 4 * scale);
-
-    // Skull on hat
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(x + w / 2, y + 5 * scale - yOffset, 4 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(x + w / 2 - 2 * scale, y + 4 * scale - yOffset, 1.5 * scale, 2 * scale);
-    ctx.fillRect(x + w / 2 + 0.5 * scale, y + 4 * scale - yOffset, 1.5 * scale, 2 * scale);
-}
-
-// Draw pirate eyes with tracking
-function drawPirateEyes(ctx, x, y, scale, yOffset = 0) {
-    const w = 40 * scale;
-
-    // Eye whites
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(x + w * 0.35, y + 16 * scale - yOffset, 5 * scale, 5 * scale, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + w * 0.65, y + 16 * scale - yOffset, 5 * scale, 5 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Pupils with eye tracking
-    const eye1 = calcEyeOffset(x, y, w * 0.35 / scale, 16, 2.5, scale);
-    const eye2 = calcEyeOffset(x, y, w * 0.65 / scale, 16, 2.5, scale);
-
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.arc(x + w * 0.35 + eye1.ox, y + 16 * scale - yOffset + eye1.oy, 2.5 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65 + eye2.ox, y + 16 * scale - yOffset + eye2.oy, 2.5 * scale, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eye patch option (just an outline for now)
-    // ctx.strokeStyle = '#1a1a1a';
-    // ctx.lineWidth = 2 * scale;
-    // ctx.beginPath();
-    // ctx.ellipse(x + w * 0.65, y + 16 * scale - yOffset, 6 * scale, 6 * scale, 0, 0, Math.PI * 2);
-    // ctx.stroke();
-}
-
-// Draw legs - one normal, one peg leg
-function drawPirateLegs(ctx, x, y, scale, leftOffset = 0, rightOffset = 0) {
+// Función Base: Dibuja el cuerpo y cabeza del robot
+// (Las animaciones usarán esto y le agregarán ojos/piernas)
+function drawPlayerBase(ctx, x, y, scale, colorOverride = null) {
     const w = 40 * scale;
     const h = 50 * scale;
+    const baseColor = colorOverride || CONFIG.COLORS.player;
+    const outlineColor = CONFIG.COLORS.playerOutline;
 
-    // Left leg (normal - brown pants)
-    ctx.fillStyle = '#5d4e37';
-    ctx.strokeStyle = '#4a3f2e';
-    ctx.lineWidth = 1 * scale;
-    ctx.fillRect(x + 8 * scale, y + h - 10 * scale + leftOffset, 10 * scale, 10 * scale);
-    ctx.strokeRect(x + 8 * scale, y + h - 10 * scale + leftOffset, 10 * scale, 10 * scale);
+    ctx.lineWidth = 2 * scale;
+    ctx.strokeStyle = outlineColor;
+    ctx.fillStyle = baseColor;
 
-    // Right leg (PEG LEG - wooden stick!)
-    ctx.fillStyle = '#8b6914';  // Wood color
-    ctx.strokeStyle = '#6b5210';
-    ctx.fillRect(x + w - 14 * scale, y + h - 12 * scale + rightOffset, 4 * scale, 12 * scale);
-    ctx.strokeRect(x + w - 14 * scale, y + h - 12 * scale + rightOffset, 4 * scale, 12 * scale);
-    // Wood grain
-    ctx.strokeStyle = '#5a4510';
-    ctx.lineWidth = 0.5 * scale;
+    // 1. CUERPO (Rectángulo redondeado)
     ctx.beginPath();
-    ctx.moveTo(x + w - 12 * scale, y + h - 10 * scale + rightOffset);
-    ctx.lineTo(x + w - 12 * scale, y + h - 2 * scale + rightOffset);
-    ctx.stroke();
-}
-
-// Draw sword on belt
-function drawPirateSword(ctx, x, y, scale) {
-    const w = 40 * scale;
-
-    // Sword handle (on right side of belt)
-    ctx.fillStyle = '#5d4e37';
-    ctx.fillRect(x + w - 10 * scale, y + 34 * scale, 3 * scale, 8 * scale);
-
-    // Sword blade (angled up)
-    ctx.fillStyle = '#c0c0c0';
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 1 * scale;
-    ctx.beginPath();
-    ctx.moveTo(x + w - 8 * scale, y + 34 * scale);
-    ctx.lineTo(x + w - 4 * scale, y + 24 * scale);
-    ctx.lineTo(x + w - 6 * scale, y + 24 * scale);
-    ctx.lineTo(x + w - 10 * scale, y + 34 * scale);
-    ctx.closePath();
+    ctx.roundRect(x + 4 * scale, y + 20 * scale, w - 8 * scale, h - 28 * scale, 6 * scale);
     ctx.fill();
     ctx.stroke();
 
-    // Guard
-    ctx.fillStyle = '#ffd93d';
-    ctx.fillRect(x + w - 12 * scale, y + 33 * scale, 7 * scale, 2 * scale);
+    // 2. CABEZA
+    ctx.beginPath();
+    ctx.roundRect(x + 2 * scale, y, w - 4 * scale, 24 * scale, 8 * scale);
+    ctx.fill();
+    ctx.stroke();
 }
 
 function drawPlayerIdle(ctx, x, y, scale, frame) {
     const w = 40 * scale;
     const h = 50 * scale;
-    const breathOffset = frame === 0 ? 0 : 1 * scale;
 
-    // Body - blue rectangle
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 5 * scale, y + 15 * scale - breathOffset, w - 10 * scale, h - 25 * scale);
+    // 1. Base
+    drawPlayerBase(ctx, x, y, scale);
 
-    // Head - blue rectangle
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 8 * scale, y + 5 * scale - breathOffset, w - 16 * scale, 15 * scale);
-
-    // Pirate Hat - black triangle
-    ctx.fillStyle = '#1a1a1a';
+    // 2. Ojos (Con seguimiento de mouse)
+    const eyeY = y + 12 * scale;
+    ctx.fillStyle = CONFIG.COLORS.playerEyes;
     ctx.beginPath();
-    ctx.moveTo(x + 5 * scale, y + 8 * scale - breathOffset);
-    ctx.lineTo(x + w - 5 * scale, y + 8 * scale - breathOffset);
-    ctx.lineTo(x + w / 2, y - 5 * scale - breathOffset);
-    ctx.closePath();
+    ctx.arc(x + w * 0.35, eyeY, 5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.65, eyeY, 5 * scale, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hat brim
-    ctx.fillRect(x + 3 * scale, y + 6 * scale - breathOffset, w - 6 * scale, 4 * scale);
+    // Pupilas
+    let pOx1 = 0, pOy1 = 0, pOx2 = 0, pOy2 = 0;
+    // Usamos tu función existente calcEyeOffset
+    if (mouse.onCanvas) {
+        const off1 = calcEyeOffset(x, y, w * 0.35 / scale, 12, 2.5, scale);
+        const off2 = calcEyeOffset(x, y, w * 0.65 / scale, 12, 2.5, scale);
+        pOx1 = off1.ox; pOy1 = off1.oy;
+        pOx2 = off2.ox; pOy2 = off2.oy;
+    }
 
-    // Eye whites
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = CONFIG.COLORS.playerPupils;
     ctx.beginPath();
-    ctx.arc(x + w * 0.35, y + 12 * scale - breathOffset, 4 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65, y + 12 * scale - breathOffset, 4 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.35 + pOx1, eyeY + pOy1, 2.5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.65 + pOx2, eyeY + pOy2, 2.5 * scale, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pupils with tracking
-    const eye1 = calcEyeOffset(x, y, w * 0.35 / scale, 12, 2, scale);
-    const eye2 = calcEyeOffset(x, y, w * 0.65 / scale, 12, 2, scale);
-    ctx.fillStyle = '#1a1a1a';
+    // 3. Piernas (Estáticas)
+    ctx.fillStyle = CONFIG.COLORS.player;
+    ctx.strokeStyle = CONFIG.COLORS.playerOutline;
+    ctx.fillRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale); // Izq
+    ctx.strokeRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
+    ctx.fillRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale); // Der
+    ctx.strokeRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
+}
+
+function drawPlayerSleep(ctx, x, y, scale, frame) {
+    const w = 40 * scale;
+    const h = 50 * scale;
+    const breath = Math.sin(Date.now() / 500) * 2 * scale;
+    drawPlayerBase(ctx, x, y + breath, scale);
+    ctx.strokeStyle = CONFIG.COLORS.playerPupils;
+    ctx.lineWidth = 2 * scale;
     ctx.beginPath();
-    ctx.arc(x + w * 0.35 + eye1.ox, y + 12 * scale - breathOffset + eye1.oy, 2 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65 + eye2.ox, y + 12 * scale - breathOffset + eye2.oy, 2 * scale, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(x + w * 0.25, y + 12 * scale + breath);
+    ctx.lineTo(x + w * 0.45, y + 12 * scale + breath);
+    ctx.moveTo(x + w * 0.55, y + 12 * scale + breath);
+    ctx.lineTo(x + w * 0.75, y + 12 * scale + breath);
+    ctx.stroke();
 
-    // Left leg - normal (blue)
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 10 * scale, y + h - 12 * scale, 8 * scale, 12 * scale);
+    const zOffset = (Date.now() % 2000) / 50;
+    const zAlpha = 1 - ((Date.now() % 2000) / 2000);
 
-    // Right leg - PEG LEG (brown wooden stick)
-    ctx.fillStyle = '#8b4513';
-    ctx.fillRect(x + w - 16 * scale, y + h - 14 * scale, 4 * scale, 14 * scale);
+    ctx.fillStyle = `rgba(255, 255, 255, ${zAlpha})`;
+    ctx.font = `bold ${12 * scale}px sans-serif`;
+    ctx.fillText("Z", x + w, y - zOffset * scale);
+
+    if (Math.abs(breath - 1.9 * scale) < 0.1 * scale && soundManager) {
+        const now = Date.now();
+        if (!player.lastSnoreTime || now - player.lastSnoreTime > 2000) {
+            soundManager.playSnore();
+            player.lastSnoreTime = now;
+        }
+    }
 }
 
 function drawPlayerRun(ctx, x, y, scale, frame) {
     const w = 40 * scale;
     const h = 50 * scale;
-    const bobOffset = (frame % 2) * 2 * scale;
-    const legOffsets = [{ left: -3, right: 3 }, { left: 0, right: 0 }, { left: 3, right: -3 }, { left: 0, right: 0 }];
-    const legOffset = legOffsets[frame] || { left: 0, right: 0 };
+    const bob = (frame % 2) * 2 * scale; // Efecto rebote al correr
 
-    // Body - blue rectangle
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 5 * scale, y + 15 * scale - bobOffset, w - 10 * scale, h - 25 * scale);
+    // 1. Base (con rebote)
+    drawPlayerBase(ctx, x, y - bob, scale);
 
-    // Head - blue rectangle
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 8 * scale, y + 5 * scale - bobOffset, w - 16 * scale, 15 * scale);
-
-    // Pirate Hat - black triangle
-    ctx.fillStyle = '#1a1a1a';
+    // 2. Ojos (Simple, sin tracking intenso al correr)
+    ctx.fillStyle = CONFIG.COLORS.playerEyes;
     ctx.beginPath();
-    ctx.moveTo(x + 5 * scale, y + 8 * scale - bobOffset);
-    ctx.lineTo(x + w - 5 * scale, y + 8 * scale - bobOffset);
-    ctx.lineTo(x + w / 2, y - 5 * scale - bobOffset);
-    ctx.closePath();
+    ctx.arc(x + w * 0.35, y + 12 * scale - bob, 5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.65, y + 12 * scale - bob, 5 * scale, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillRect(x + 3 * scale, y + 6 * scale - bobOffset, w - 6 * scale, 4 * scale);
-
-    // Eyes
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(x + w * 0.35, y + 12 * scale - bobOffset, 4 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65, y + 12 * scale - bobOffset, 4 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = CONFIG.COLORS.playerPupils;
+    ctx.beginPath(); // Mirando al frente
+    ctx.arc(x + w * 0.40, y + 12 * scale - bob, 2.5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.70, y + 12 * scale - bob, 2.5 * scale, 0, Math.PI * 2);
     ctx.fill();
 
-    const eye1 = calcEyeOffset(x, y, w * 0.35 / scale, 12, 2, scale);
-    const eye2 = calcEyeOffset(x, y, w * 0.65 / scale, 12, 2, scale);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.arc(x + w * 0.35 + eye1.ox, y + 12 * scale - bobOffset + eye1.oy, 2 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65 + eye2.ox, y + 12 * scale - bobOffset + eye2.oy, 2 * scale, 0, Math.PI * 2);
-    ctx.fill();
+    // 3. Piernas (Animadas)
+    const legOffset = (frame % 2 === 0) ? 0 : 4 * scale;
+    ctx.fillStyle = CONFIG.COLORS.player;
+    ctx.strokeStyle = CONFIG.COLORS.playerOutline;
 
-    // Left leg (animated)
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(x + 10 * scale, y + h - 12 * scale + legOffset.left * scale, 8 * scale, 12 * scale);
-
-    // Peg leg (animated)
-    ctx.fillStyle = '#8b4513';
-    ctx.fillRect(x + w - 16 * scale, y + h - 14 * scale + legOffset.right * scale, 4 * scale, 14 * scale);
+    // Pierna Izq
+    ctx.fillRect(x + 8 * scale, y + h - 10 * scale - legOffset, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + 8 * scale, y + h - 10 * scale - legOffset, 10 * scale, 10 * scale);
+    // Pierna Der (Inversa)
+    ctx.fillRect(x + w - 18 * scale, y + h - 14 * scale + legOffset, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + w - 18 * scale, y + h - 14 * scale + legOffset, 10 * scale, 10 * scale);
 }
 
 function drawPlayerJump(ctx, x, y, scale) {
     const w = 40 * scale;
     const h = 50 * scale;
 
+    // 1. Dibujamos la base
     drawPlayerBase(ctx, x, y, scale);
 
+    // 2. Ojos (Parte Blanca)
     ctx.fillStyle = CONFIG.COLORS.playerEyes;
     ctx.beginPath();
-    ctx.ellipse(x + w * 0.55, y + 8 * scale, 6 * scale, 8 * scale, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + w * 0.8, y + 8 * scale, 5 * scale, 7 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.35, y + 10 * scale, 5 * scale, 7 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.65, y + 10 * scale, 5 * scale, 7 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // 3. PUPILAS
     ctx.fillStyle = CONFIG.COLORS.playerPupils;
     ctx.beginPath();
-    ctx.arc(x + w * 0.55, y + 5 * scale, 3 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.80, y + 5 * scale, 2.5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.35, y + 8 * scale, 2.5 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.65, y + 8 * scale, 2.5 * scale, 0, Math.PI * 2);
     ctx.fill();
 
+    // 4. Piernas encogidas
     ctx.fillStyle = CONFIG.COLORS.player;
     ctx.strokeStyle = CONFIG.COLORS.playerOutline;
-    ctx.fillRect(x + 10 * scale, y + h - 14 * scale, 8 * scale, 8 * scale);
-    ctx.strokeRect(x + 10 * scale, y + h - 14 * scale, 8 * scale, 8 * scale);
-    ctx.fillRect(x + w - 18 * scale, y + h - 14 * scale, 8 * scale, 8 * scale);
-    ctx.strokeRect(x + w - 18 * scale, y + h - 14 * scale, 8 * scale, 8 * scale);
+
+    // Pierna Izquierda subida
+    ctx.fillRect(x + 8 * scale, y + h - 14 * scale, 10 * scale, 8 * scale);
+    ctx.strokeRect(x + 8 * scale, y + h - 14 * scale, 10 * scale, 8 * scale);
+
+    // Pierna Derecha subida
+    ctx.fillRect(x + w - 18 * scale, y + h - 14 * scale, 10 * scale, 8 * scale);
+    ctx.strokeRect(x + w - 18 * scale, y + h - 14 * scale, 10 * scale, 8 * scale);
 }
 
-function drawPlayerLookUp(ctx, x, y, scale, frame) {
+function drawPlayerLookUp(ctx, x, y, scale) {
+    // Usamos el diseño Idle pero mirando arriba
+    drawPlayerIdle(ctx, x, y - 2 * scale, scale, 0);
+}
+
+function drawPlayerHappy(ctx, x, y, scale, frame, sprite) {
     const w = 40 * scale;
     const h = 50 * scale;
 
-    drawPlayerBase(ctx, x, y, scale, CONFIG.COLORS.playerLookUp);
+    // 1. Cuerpo Base
+    drawPlayerBase(ctx, x, y, scale);
 
-    ctx.fillStyle = CONFIG.COLORS.playerLookUp;
-    ctx.strokeStyle = CONFIG.COLORS.playerOutline;
+    // 2. Ojos Felices (^ ^)
     ctx.lineWidth = 2 * scale;
+    ctx.strokeStyle = CONFIG.COLORS.playerPupils;
     ctx.beginPath();
-    ctx.roundRect(x + 2 * scale, y - 3 * scale, w - 4 * scale, 25 * scale, 8 * scale);
-    ctx.fill();
+    ctx.moveTo(x + w * 0.25, y + 14 * scale);
+    ctx.lineTo(x + w * 0.35, y + 10 * scale);
+    ctx.lineTo(x + w * 0.45, y + 14 * scale);
+    ctx.moveTo(x + w * 0.55, y + 14 * scale);
+    ctx.lineTo(x + w * 0.65, y + 10 * scale);
+    ctx.lineTo(x + w * 0.75, y + 14 * scale);
     ctx.stroke();
 
-    ctx.fillStyle = CONFIG.COLORS.playerEyes;
+    // 3. Sonrisa
     ctx.beginPath();
-    ctx.ellipse(x + w * 0.4, y + 6 * scale, 7 * scale, 9 * scale, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + w * 0.7, y + 6 * scale, 7 * scale, 9 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(x + w / 2, y + 18 * scale, 4 * scale, 0, Math.PI);
+    ctx.stroke();
 
-    ctx.fillStyle = CONFIG.COLORS.playerPupils;
-    ctx.beginPath();
-    ctx.arc(x + w * 0.4, y + 2 * scale, 3 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.7, y + 2 * scale, 3 * scale, 0, Math.PI * 2);
-    ctx.fill();
+    // 4. GLOBO DE DIÁLOGO
+    ctx.save();
 
-    if (frame === 1) {
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x + w * 0.35, y, 2 * scale, 0, Math.PI * 2);
-        ctx.fill();
+    let textScaleX = 1;
+    if (sprite && !sprite.facingRight) {
+        textScaleX = -1;
     }
 
-    ctx.fillStyle = CONFIG.COLORS.playerLookUp;
+    const text = t('itsMe');
+    ctx.font = `bold ${12 * scale}px sans-serif`;
+    const textWidth = ctx.measureText(text).width;
+    const bubbleW = textWidth + 20 * scale;
+    const bubbleH = 25 * scale;
+
+    // Calculamos el centro del globo para poder rotarlo/invertirlo desde ahí si hace falta
+    const bubbleCenterX = x + w / 2;
+    const bubbleY = y - bubbleH - 10 * scale;
+
+    // Dibujamos el globo
+    ctx.fillStyle = 'white';
+
+    // Aquí aplicamos la des-inversión si es necesario
+    ctx.translate(bubbleCenterX, bubbleY + bubbleH / 2);
+    ctx.scale(textScaleX, 1);
+    ctx.translate(-bubbleCenterX, -(bubbleY + bubbleH / 2));
+
+    // Caja del globo (Centrada en 0,0 relativo a la transformación anterior)
+    ctx.beginPath();
+    ctx.roundRect(bubbleCenterX - bubbleW / 2, bubbleY, bubbleW, bubbleH, 5 * scale);
+    ctx.fill();
+
+    // Pico del globo
+    ctx.beginPath();
+    ctx.moveTo(bubbleCenterX, bubbleY + bubbleH);
+    ctx.lineTo(bubbleCenterX - 5 * scale, bubbleY + bubbleH + 5 * scale);
+    ctx.lineTo(bubbleCenterX + 5 * scale, bubbleY + bubbleH);
+    ctx.fill();
+
+    // Texto
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, bubbleCenterX, bubbleY + bubbleH / 2);
+
+    ctx.restore();
+
+    // 5. Piernas (Saltando de alegría)
+    ctx.fillStyle = CONFIG.COLORS.player;
     ctx.strokeStyle = CONFIG.COLORS.playerOutline;
-    ctx.fillRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.strokeRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.fillRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.strokeRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
+    ctx.fillRect(x + 4 * scale, y + h - 12 * scale, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + 4 * scale, y + h - 12 * scale, 10 * scale, 10 * scale);
+    ctx.fillRect(x + w - 14 * scale, y + h - 12 * scale, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + w - 14 * scale, y + h - 12 * scale, 10 * scale, 10 * scale);
 }
 
 function drawPlayerShocked(ctx, x, y, scale, frame) {
     const w = 40 * scale;
     const h = 50 * scale;
-    const shakeX = (frame % 2) * 2 * scale - 1 * scale;
+    // Temblor
+    const shake = (frame % 2 === 0) ? -2 * scale : 2 * scale;
 
-    drawPlayerBase(ctx, x + shakeX, y, scale, CONFIG.COLORS.playerShocked);
+    // Base Roja/Asustada
+    drawPlayerBase(ctx, x + shake, y, scale, CONFIG.COLORS.playerShocked);
 
-    ctx.fillStyle = CONFIG.COLORS.playerEyes;
+    // Ojos Grandes
+    ctx.fillStyle = '#FFF';
     ctx.beginPath();
-    ctx.ellipse(x + w * 0.4 + shakeX, y + 10 * scale, 9 * scale, 10 * scale, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + w * 0.75 + shakeX, y + 10 * scale, 9 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.35 + shake, y + 12 * scale, 7 * scale, 9 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.65 + shake, y + 12 * scale, 7 * scale, 9 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = CONFIG.COLORS.playerPupils;
+    // Pupilas Pequeñas (Susto)
+    ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.arc(x + w * 0.4 + shakeX, y + 10 * scale, 2 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.75 + shakeX, y + 10 * scale, 2 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.35 + shake, y + 12 * scale, 2 * scale, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.65 + shake, y + 12 * scale, 2 * scale, 0, Math.PI * 2);
     ctx.fill();
 
+    // Boca "O"
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(x + w / 2 + shake, y + 25 * scale, 3 * scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Signo !
     ctx.fillStyle = '#ffd93d';
-    ctx.font = `bold ${14 * scale}px 'Press Start 2P', cursive`;
+    ctx.font = `bold ${14 * scale}px 'Press Start 2P'`;
     ctx.textAlign = 'center';
-    ctx.fillText('!', x + w * 0.5 + shakeX, y - 8 * scale);
+    ctx.fillText('!', x + w / 2 + shake, y - 5 * scale);
 
-    ctx.fillStyle = '#1a1a2e';
-    ctx.beginPath();
-    ctx.ellipse(x + w * 0.5 + shakeX, y + 20 * scale, 4 * scale, 3 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
-
+    // Piernas
     ctx.fillStyle = CONFIG.COLORS.playerShocked;
     ctx.strokeStyle = CONFIG.COLORS.playerOutline;
-    ctx.fillRect(x + 8 * scale + shakeX, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.strokeRect(x + 8 * scale + shakeX, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.fillRect(x + w - 18 * scale + shakeX, y + h - 10 * scale, 10 * scale, 10 * scale);
-    ctx.strokeRect(x + w - 18 * scale + shakeX, y + h - 10 * scale, 10 * scale, 10 * scale);
-}
-
-// NEW: Coding animation - character with glasses typing on laptop
-function drawPlayerCoding(ctx, x, y, scale, frame) {
-    const w = 40 * scale;
-    const h = 50 * scale;
-
-    // Body (purple tint for coding mode)
-    drawPlayerBase(ctx, x, y, scale, CONFIG.COLORS.playerCoding);
-
-    // Glasses frame
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2 * scale;
-    ctx.beginPath();
-    // Left lens
-    ctx.roundRect(x + w * 0.25, y + 6 * scale, 12 * scale, 10 * scale, 2 * scale);
-    // Right lens
-    ctx.roundRect(x + w * 0.55, y + 6 * scale, 12 * scale, 10 * scale, 2 * scale);
-    ctx.stroke();
-    // Bridge
-    ctx.beginPath();
-    ctx.moveTo(x + w * 0.25 + 12 * scale, y + 10 * scale);
-    ctx.lineTo(x + w * 0.55, y + 10 * scale);
-    ctx.stroke();
-
-    // Eyes behind glasses (focused)
-    ctx.fillStyle = CONFIG.COLORS.playerEyes;
-    ctx.beginPath();
-    ctx.ellipse(x + w * 0.35, y + 11 * scale, 4 * scale, 5 * scale, 0, 0, Math.PI * 2);
-    ctx.ellipse(x + w * 0.65, y + 11 * scale, 4 * scale, 5 * scale, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Pupils - looking down at "screen"
-    ctx.fillStyle = CONFIG.COLORS.playerPupils;
-    ctx.beginPath();
-    ctx.arc(x + w * 0.35, y + 13 * scale, 2 * scale, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.65, y + 13 * scale, 2 * scale, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Mini laptop in front
-    const laptopY = y + h - 20 * scale;
-    const laptopX = x + w * 0.1;
-    const laptopW = w * 0.8;
-    const laptopH = 12 * scale;
-
-    // Laptop base
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(laptopX, laptopY, laptopW, laptopH);
-    ctx.strokeStyle = '#1a252f';
-    ctx.strokeRect(laptopX, laptopY, laptopW, laptopH);
-
-    // Screen (with glow)
-    ctx.fillStyle = frame % 2 === 0 ? '#3498db' : '#2ecc71';
-    ctx.fillRect(laptopX + 2 * scale, laptopY + 2 * scale, laptopW - 4 * scale, 6 * scale);
-
-    // Code lines on screen
-    ctx.fillStyle = '#fff';
-    const lineY = laptopY + 4 * scale;
-    for (let i = 0; i < 3; i++) {
-        const lineW = (3 + (frame + i) % 3) * scale;
-        ctx.fillRect(laptopX + 4 * scale + i * 8 * scale, lineY, lineW, 1 * scale);
-    }
-
-    // Hands/arms typing (animated)
-    ctx.fillStyle = CONFIG.COLORS.playerCoding;
-    const handOffset = frame % 2 === 0 ? 0 : 2 * scale;
-    // Left hand
-    ctx.fillRect(x + 6 * scale, laptopY - 4 * scale + handOffset, 8 * scale, 6 * scale);
-    // Right hand
-    ctx.fillRect(x + w - 14 * scale, laptopY - 4 * scale - handOffset, 8 * scale, 6 * scale);
-
-    // Legs (sitting)
-    ctx.fillStyle = CONFIG.COLORS.playerCoding;
-    ctx.strokeStyle = CONFIG.COLORS.playerOutline;
-    ctx.fillRect(x + 8 * scale, y + h - 8 * scale, 10 * scale, 8 * scale);
-    ctx.strokeRect(x + 8 * scale, y + h - 8 * scale, 10 * scale, 8 * scale);
-    ctx.fillRect(x + w - 18 * scale, y + h - 8 * scale, 10 * scale, 8 * scale);
-    ctx.strokeRect(x + w - 18 * scale, y + h - 8 * scale, 10 * scale, 8 * scale);
-
-    // Thought bubble with code
-    if (frame === 2) {
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.beginPath();
-        ctx.arc(x + w + 5 * scale, y - 5 * scale, 8 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#333';
-        ctx.font = `${6 * scale}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText('{ }', x + w + 5 * scale, y - 3 * scale);
-    }
+    ctx.fillRect(x + 8 * scale + shake, y + h - 10 * scale, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + 8 * scale + shake, y + h - 10 * scale, 10 * scale, 10 * scale);
+    ctx.fillRect(x + w - 18 * scale + shake, y + h - 10 * scale, 10 * scale, 10 * scale);
+    ctx.strokeRect(x + w - 18 * scale + shake, y + h - 10 * scale, 10 * scale, 10 * scale);
 }
 
 // ============ CANVAS SETUP ============
@@ -1141,11 +1008,11 @@ class Player {
         this.facingRight = true;
         this.sprite = createPlayerSprite();
         this.forcedState = null;
-        this.forcedState = null;
-        this.forcedState = null;
-        this.isCoding = false; // Hacker Mode State
         this.lastTime = performance.now();
-        this.prevY = y;  // Track previous Y position for one-way platforms
+        this.prevY = y;
+        this.sprite = createPlayerSprite();
+        this.lastActionTime = Date.now();
+        this.lastSnoreTime = 0;
     }
 
     setForcedState(state) {
@@ -1173,6 +1040,10 @@ class Player {
 
         // Store previous Y before updating physics
         this.prevY = this.y;
+
+        if (keys.left || keys.right || keys.jump || Math.abs(this.vx) > 0.1 || !this.onGround) {
+            this.lastActionTime = Date.now();
+        }
 
         if (this.forcedState) {
             this.sprite.update(deltaTime);
@@ -1224,6 +1095,7 @@ class Player {
         this.updateSpriteState();
         this.sprite.facingRight = this.facingRight;
         this.sprite.update(deltaTime);
+
     }
 
     updateSpriteState() {
@@ -1233,7 +1105,12 @@ class Player {
         } else if (Math.abs(this.vx) > 0.5) {
             this.sprite.setState(PlayerState.RUN);
         } else {
-            this.sprite.setState(PlayerState.IDLE);
+            const timeInactive = Date.now() - this.lastActionTime;
+            if (timeInactive > CONFIG.SLEEP_DELAY) {
+                this.sprite.setState(PlayerState.SLEEP);
+            } else {
+                this.sprite.setState(PlayerState.IDLE);
+            }
         }
     }
 
@@ -1283,126 +1160,7 @@ class Player {
 
     draw() {
         const scale = getScale();
-        const x = this.x * scale;
-        const y = this.y * scale;
-        const w = this.width * scale;
-        const h = this.height * scale;
-
-        ctx.save();
-
-        // Flip if facing left
-        if (!this.facingRight) {
-            ctx.translate(x + w, 0);
-            ctx.scale(-1, 1);
-            ctx.translate(-x, 0);
-        }
-
-        // Outline color
-        ctx.strokeStyle = '#0099cc';
-        ctx.lineWidth = 2 * scale;
-
-        // BODY - cyan rounded rectangle
-        ctx.fillStyle = '#00d9ff';
-        ctx.beginPath();
-        ctx.roundRect(x + 4 * scale, y + 20 * scale, w - 8 * scale, h - 28 * scale, 6 * scale);
-        ctx.fill();
-        ctx.stroke();
-
-        // HEAD - cyan rounded rectangle
-        ctx.fillStyle = '#00d9ff';
-        ctx.beginPath();
-        ctx.roundRect(x + 2 * scale, y, w - 4 * scale, 24 * scale, 8 * scale);
-        ctx.fill();
-        ctx.stroke();
-
-        // EYES - white circles (positioned in head)
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x + w * 0.35, y + 12 * scale, 5 * scale, 0, Math.PI * 2);
-        ctx.arc(x + w * 0.65, y + 12 * scale, 5 * scale, 0, Math.PI * 2);
-        ctx.fill();
-
-        // PUPILS - with mouse tracking
-        let pupilOffsetX1 = 0, pupilOffsetY1 = 0;
-        let pupilOffsetX2 = 0, pupilOffsetY2 = 0;
-        if (mouse.onCanvas) {
-            const eyeX1 = this.x + this.width * 0.35;
-            const eyeY1 = this.y + 12;
-            const dx1 = mouse.x - eyeX1;
-            const dy1 = mouse.y - eyeY1;
-            const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1) || 1;
-            pupilOffsetX1 = (dx1 / dist1) * 2.5 * scale;
-            pupilOffsetY1 = (dy1 / dist1) * 2.5 * scale;
-
-            const eyeX2 = this.x + this.width * 0.65;
-            const dx2 = mouse.x - eyeX2;
-            const dy2 = mouse.y - eyeY1;
-            const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 1;
-            pupilOffsetX2 = (dx2 / dist2) * 2.5 * scale;
-            pupilOffsetY2 = (dy2 / dist2) * 2.5 * scale;
-        }
-
-        ctx.fillStyle = '#1a1a2e';
-        ctx.beginPath();
-        ctx.arc(x + w * 0.35 + pupilOffsetX1, y + 12 * scale + pupilOffsetY1, 2.5 * scale, 0, Math.PI * 2);
-        ctx.arc(x + w * 0.65 + pupilOffsetX2, y + 12 * scale + pupilOffsetY2, 2.5 * scale, 0, Math.PI * 2);
-        ctx.fill();
-
-        // LEGS - both cyan, matching body
-        ctx.fillStyle = '#00d9ff';
-        ctx.strokeStyle = '#0099cc';
-
-        // Left leg
-        ctx.fillRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-        ctx.strokeRect(x + 8 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-
-        // Right leg
-        ctx.fillRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-        ctx.strokeRect(x + w - 18 * scale, y + h - 10 * scale, 10 * scale, 10 * scale);
-
-        // ============ HACKER MODE OVERLAY (Simple) ============
-        if (this.isCoding) {
-            // Screen Glow (Reflection on body)
-            // Flicker between cyan and green to simulate active terminal
-            const flicker = Math.floor(performance.now() / 100) % 2 === 0;
-            ctx.fillStyle = flicker ? 'rgba(0, 255, 255, 0.2)' : 'rgba(0, 255, 0, 0.2)';
-            ctx.beginPath();
-            ctx.roundRect(x + 4 * scale, y + 20 * scale, w - 8 * scale, h - 28 * scale, 6 * scale);
-            ctx.fill();
-
-            // Sunglasses (Black rects over eyes)
-            ctx.fillStyle = '#111';
-            // Left Lens
-            ctx.beginPath();
-            ctx.roundRect(x + w * 0.25, y + 8 * scale, 12 * scale, 8 * scale, 2 * scale);
-            ctx.fill();
-            // Right Lens
-            ctx.beginPath();
-            ctx.roundRect(x + w * 0.55, y + 8 * scale, 12 * scale, 8 * scale, 2 * scale);
-            ctx.fill();
-            // Bridge
-            ctx.strokeStyle = '#111';
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.45, y + 10 * scale);
-            ctx.lineTo(x + w * 0.55, y + 10 * scale);
-            ctx.stroke();
-
-            // Laptop (Moved UP: Chest level)
-            ctx.fillStyle = '#333'; // Dark Gray Case
-            // Position: y + h - 25 (Higher up)
-            ctx.fillRect(x + w * 0.1, y + h - 25 * scale, w * 0.8, 12 * scale);
-
-            // Laptop Logo (Apple-ish style)
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(x + w * 0.5, y + h - 19 * scale, 2.5 * scale, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Optional: Matrix Rain Effect around player? (Maybe too much, keeping it simple as requested)
-        }
-
-        ctx.restore();
+        this.sprite.draw(ctx, this.x, this.y, scale);
     }
 }
 
@@ -1582,6 +1340,18 @@ class ProjectBlock extends Block {
         createParticles(this.x + this.width / 2, this.y + this.height / 2, 15, CONFIG.COLORS.particle);
         soundManager.playBump();
         soundManager.playCoin();
+        if (this.project.id === 3) {
+            setTimeout(() => {
+                soundManager.playHappy();
+                if (Math.abs(player.vx) < 1) {
+                    player.setForcedState(PlayerState.HAPPY);
+                    setTimeout(() => {
+                        player.clearForcedState();
+                    }, 2000);
+                }
+            }, 500);
+        }
+
         showProjectModal(this.project);
     }
 
@@ -1937,10 +1707,12 @@ function showProjectModal(project) {
                     tag.className = 'tech-tag';
                     tag.textContent = tech;
                     tag.addEventListener('mouseenter', () => {
-                        player.isCoding = true;
-                        soundManager.playTypingSound();
+                        player.setForcedState(PlayerState.SHOCKED);
+                        soundManager.playShocked(); // ¡Hará un ruido gracioso!
                     });
-                    tag.addEventListener('mouseleave', () => player.isCoding = false);
+                    tag.addEventListener('mouseleave', () => {
+                        player.clearForcedState();
+                    });
                     techTags.appendChild(tag);
                 });
             } else {
